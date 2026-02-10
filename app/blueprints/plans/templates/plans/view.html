@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plan.nome_projeto }} - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ plan.nome_projeto }}</h1>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('plans.export_pdf', id=plan.id) }}" class="btn btn-secondary">📄 Exportar PDF</a>
+        <a href="{{ url_for('plans.edit_plan', id=plan.id) }}" class="btn btn-primary">Editar</a>
+        <a href="{{ url_for('plans.list_plans') }}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Básicas</h2>
+        </div>
+        <dl class="plan-detail">
+            <dt>Cliente</dt>
+            <dd>{{ plan.cliente or '—' }}</dd>
+
+            <dt>Contato</dt>
+            <dd>{{ plan.contato_cliente or '—' }}</dd>
+
+            <dt>Telefone</dt>
+            <dd>{{ plan.telefone_contato or '—' }}</dd>
+
+            <dt>Produtor</dt>
+            <dd>{{ plan.produtor_responsavel or '—' }}</dd>
+        </dl>
+    </div>
+
+    <!-- Dates -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Datas do Projeto</h2>
+        </div>
+        <dl class="plan-detail">
+            <dt>Instalação</dt>
+            <dd>{{ plan.data_instalacao or '—' }}</dd>
+
+            <dt>Remoção</dt>
+            <dd>{{ plan.data_remocao or '—' }}</dd>
+
+            <dt>Início Veiculação</dt>
+            <dd>{{ plan.inicio_veiculacao or '—' }}</dd>
+
+            <dt>Fim Veiculação</dt>
+            <dd>{{ plan.fim_veiculacao or '—' }}</dd>
+        </dl>
+    </div>
+</div>
+
+<!-- Location -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📍 Localização</h2>
+    </div>
+    {% if plan.endereco %}
+    <p>
+        <a href="https://www.google.com/maps/search/?api=1&query={{ plan.endereco }}" target="_blank"
+            style="text-decoration: none; color: inherit;">
+            {{ plan.endereco }} 🔗
+        </a>
+    </p>
+    {% else %}
+    <p>Endereço não informado</p>
+    {% endif %}
+</div>
+
+<!-- Description -->
+{% if plan.descricao %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Descrição do Projeto</h2>
+    </div>
+    <p style="white-space: pre-wrap;">{{ plan.descricao }}</p>
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <!-- Installation Team -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🔧 Equipe de Instalação</h2>
+        </div>
+        {% if installer_names %}
+        <div class="tag-list">
+            {% for inst in installer_names %}
+            <div class="tag">{{ inst.nome }} ({{ inst.especialidade }})</div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #64748b;">Nenhum instalador atribuído</p>
+        {% endif %}
+    </div>
+
+    <!-- External Services -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🚚 Serviços Externos</h2>
+        </div>
+        {% set services = plan.servicos_externos if plan.servicos_externos else [] %}
+        {% if services %}
+        <ul style="list-style: none;">
+            {% for service in services %}
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--color-ice);">
+                <strong>{{ service.tipo }}</strong><br>
+                <span style="color: #64748b;">{{ service.responsavel }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: #64748b;">Nenhum serviço externo</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Materials -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📦 Materiais Principais</h2>
+    </div>
+    {% set materials = plan.materiais if plan.materiais else [] %}
+    {% if materials %}
+    <div class="tag-list">
+        {% for material in materials %}
+        <div class="tag">{{ material }}</div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #64748b;">Nenhum material listado</p>
+    {% endif %}
+</div>
+
+<!-- Notes -->
+{% if plan.informacoes_importantes %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">⚠️ Informações Importantes</h2>
+    </div>
+    <p style="white-space: pre-wrap;">{{ plan.informacoes_importantes }}</p>
+</div>
+{% endif %}
+
+<!-- Layout Photo -->
+{% if plan.foto_layout %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🖼️ Foto do Layout</h2>
+    </div>
+    <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout) }}" alt="Layout do projeto"
+        style="display: block; margin: 0 auto; max-width: 40%; border-radius: var(--radius-md);">
+</div>
+{% endif %}
+{% endblock %}

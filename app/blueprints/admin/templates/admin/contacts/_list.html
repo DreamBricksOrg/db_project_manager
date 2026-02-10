@@ -1,0 +1,44 @@
+<div class="page-header">
+    <h1 class="page-title">Contatos</h1>
+    <a href="{{ url_for('admin.new_contact') }}" class="btn btn-primary">+ Novo Contato</a>
+</div>
+
+<div class="card">
+    {% if contacts %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr>
+                    <td>{{ contact.nome }}</td>
+                    <td>{{ contact.telefone }}</td>
+                    <td>{{ contact.email }}</td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('admin.edit_contact', id=contact.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_contact', id=contact.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover este contato?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum contato cadastrado</h3>
+        <p>Clique em "Novo Contato" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>

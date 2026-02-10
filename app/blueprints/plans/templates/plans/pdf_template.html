@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 20pt;
+
+            @frame content_frame {
+                left: 20pt;
+                width: 555pt;
+                top: 20pt;
+                height: 802pt;
+            }
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            /* Fallback for gradient */
+            color: #034a5d;
+            /* --color-navy */
+            font-size: 10pt;
+            line-height: 1.6;
+        }
+
+        /* Container simulation */
+        .container {
+            width: 100%;
+        }
+
+        /* Card Styles - Matching style.css .card */
+        .card {
+            background-color: #ffffff;
+            border-radius: 12pt;
+            /* --radius-lg */
+            padding: 18pt;
+            /* 24px */
+            margin-bottom: 15pt;
+            /* 20px */
+            border: 1px solid #e2e8f0;
+            /* Border fallback for shadow */
+        }
+
+        .card-header {
+            border-bottom: 1px solid #c7f1ff;
+            /* --color-ice */
+            padding-bottom: 12pt;
+            margin-bottom: 15pt;
+        }
+
+        .card-title {
+            font-size: 14pt;
+            /* 1.25rem */
+            font-weight: bold;
+            color: #034a5d;
+            /* --color-navy */
+            margin: 0;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 18pt;
+            display: block;
+        }
+
+        .page-title {
+            font-size: 18pt;
+            /* 1.5rem */
+            font-weight: bold;
+            color: #034a5d;
+        }
+
+        /* Typography */
+        p {
+            margin: 0;
+        }
+
+        /* List/Details - Simulated Grid */
+        .detail-row {
+            padding-bottom: 10pt;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 4pt;
+            font-weight: bold;
+            /* 500 */
+            color: #64748b;
+            /* Form label color */
+            font-size: 9pt;
+        }
+
+        .value {
+            color: #034a5d;
+            font-size: 10pt;
+        }
+
+        /* Tags - Matching style.css .tag */
+        .tag {
+            display: inline-block;
+            padding: 4pt 9pt;
+            background-color: #c7f1ff;
+            /* --color-ice */
+            color: #034a5d;
+            /* --color-navy */
+            border-radius: 15pt;
+            font-size: 9pt;
+            margin-right: 4pt;
+            margin-bottom: 4pt;
+        }
+
+        /* External Services List */
+        .service-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .service-item {
+            padding: 6pt 0;
+            border-bottom: 1px solid #c7f1ff;
+        }
+
+        .service-type {
+            font-weight: bold;
+            color: #034a5d;
+        }
+
+        .service-resp {
+            color: #64748b;
+            font-size: 9pt;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30pt;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+        }
+
+        /* Helpers */
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .col-left {
+            width: 49%;
+            vertical-align: top;
+            padding-right: 1%;
+        }
+
+        .col-right {
+            width: 49%;
+            vertical-align: top;
+            padding-left: 1%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="page-header">
+            <img src="{{ logo_path }}" style="height: 40pt; margin-bottom: 10pt;">
+            <div class="page-title">{{ plan.nome_projeto }}</div>
+        </div>
+
+        <!-- Grid 1: Basic Info & Dates -->
+        <table class="grid-table">
+            <tr>
+                <td class="col-left">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Informações Básicas</div>
+                        </div>
+                        <table class="grid-table">
+                            <tr>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Cliente</span>
+                                    <div class="value">{{ plan.cliente or '—' }}</div>
+                                </td>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Contato</span>
+                                    <div class="value">{{ plan.contato_cliente or '—' }}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Telefone</span>
+                                    <div class="value">{{ plan.telefone_contato or '—' }}</div>
+                                </td>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Produtor</span>
+                                    <div class="value">{{ plan.produtor_responsavel or '—' }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+                <td class="col-right">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Datas do Projeto</div>
+                        </div>
+                        <table class="grid-table">
+                            <tr>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Instalação</span>
+                                    <div class="value">{{ plan.data_instalacao or '—' }}</div>
+                                </td>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Remoção</span>
+                                    <div class="value">{{ plan.data_remocao or '—' }}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Início Veiculação</span>
+                                    <div class="value">{{ plan.inicio_veiculacao or '—' }}</div>
+                                </td>
+                                <td style="width: 50%; padding-bottom: 8pt;">
+                                    <span class="label">Fim Veiculação</span>
+                                    <div class="value">{{ plan.fim_veiculacao or '—' }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Location -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📍 Localização</div>
+            </div>
+            <div class="value">{{ plan.endereco or 'Endereço não informado' }}</div>
+            {% if plan.endereco %}
+            <div style="margin-top: 8pt;">
+                <a href="https://www.google.com/maps/search/?api=1&query={{ plan.endereco | urlencode }}"
+                    style="color: #0284c7; text-decoration: underline; font-size: 9pt;">
+                    🗺️ Abrir no Google Maps
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Description -->
+        {% if plan.descricao %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Descrição do Projeto</div>
+            </div>
+            <div class="value" style="white-space: pre-wrap;">{{ plan.descricao }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Grid 2: Team & Services -->
+        <table class="grid-table">
+            <tr>
+                <td class="col-left">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🔧 Equipe de Instalação</div>
+                        </div>
+                        {% if installer_names %}
+                        <div>
+                            {% for inst in installer_names %}
+                            <div class="tag">{{ inst.nome }} ({{ inst.especialidade }})</div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="color: #64748b;">Nenhum instalador atribuído</div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="col-right">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🚚 Serviços Externos</div>
+                        </div>
+                        {% set services = plan.servicos_externos if plan.servicos_externos else [] %}
+                        {% if services %}
+                        <div class="service-list">
+                            {% for service in services %}
+                            <div class="service-item">
+                                <div class="service-type">{{ service.tipo }}</div>
+                                <div class="service-resp">{{ service.responsavel }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="color: #64748b;">Nenhum serviço externo</div>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Materials -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📦 Materiais Principais</div>
+            </div>
+            {% set materials = plan.materiais if plan.materiais else [] %}
+            {% if materials %}
+            <div>
+                {% for material in materials %}
+                <span class="tag">{{ material }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="color: #64748b;">Nenhum material listado</div>
+            {% endif %}
+        </div>
+
+        <!-- Notes -->
+        {% if plan.informacoes_importantes %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">⚠️ Informações Importantes</div>
+            </div>
+            <div class="value" style="white-space: pre-wrap;">{{ plan.informacoes_importantes }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Layout Photo -->
+        {% if plan.foto_layout %}
+        <div class="card" style="page-break-before: always;">
+            <div class="card-header">
+                <div class="card-title">🖼️ Foto do Layout</div>
+            </div>
+            <div style="text-align: center;">
+                <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout, _external=True) }}"
+                    style="max-width: 100%; height: auto; border-radius: 8pt;">
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Gerado em {{ now.strftime('%d/%m/%Y %H:%M') }} - OOH Project Manager
+        </div>
+
+    </div>
+</body>
+
+</html>

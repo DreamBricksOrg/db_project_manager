@@ -1,0 +1,318 @@
+"""Plans Routes - Installation plans management"""
+
+import os
+import json
+import io
+from datetime import datetime
+from flask import render_template, redirect, url_for, request, flash, current_app, send_file
+from werkzeug.utils import secure_filename
+from xhtml2pdf import pisa
+
+from app.blueprints.plans import plans_bp
+from app.blueprints.auth.routes import login_required, admin_required
+from app.repositories import (
+    plans_repo, contacts_repo, producers_repo, 
+    installers_repo, services_repo, materials_repo
+)
+
+
+def format_date_br(iso_date):
+    """Convert yyyy-mm-dd to dd/mm/aaaa"""
+    if not iso_date:
+        return ''
+    try:
+        dt = datetime.strptime(iso_date, '%Y-%m-%d')
+        return dt.strftime('%d/%m/%Y')
+    except ValueError:
+        return iso_date
+
+
+def parse_date_br(br_date):
+    """Convert dd/mm/aaaa to yyyy-mm-dd"""
+    if not br_date:
+        return ''
+    try:
+        dt = datetime.strptime(br_date, '%d/%m/%Y')
+        return dt.strftime('%Y-%m-%d')
+    except ValueError:
+        return br_date
+
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@plans_bp.route('/')
+@login_required
+def list_plans():
+    q = request.args.get('q', '').strip().lower()
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    
+    plans = plans_repo.get_all()
+    all_installers = {i['id']: i['nome'].lower() for i in installers_repo.get_all()}
+    
+    filtered_plans = []
+    
+    for p in plans:
+        # Date Filter
+        p_date = p.get('data_instalacao', '')
+        if start_date and p_date and p_date < start_date:
+            continue
+        if end_date and p_date and p_date > end_date:
+            continue
+            
+        # Text Search
+        if q:
+            searchable_text = [
+                p.get('nome_projeto', ''),
+                p.get('cliente', ''),
+                p.get('contato_cliente', ''),
+                p.get('produtor_responsavel', ''),
+                p.get('endereco', ''),
+            ]
+            
+            # Add materials to search
+            if isinstance(p.get('materiais'), list):
+                searchable_text.extend(p['materiais'])
+                
+            # Add installer names to search
+            if isinstance(p.get('instaladores'), list):
+                for inst_id in p['instaladores']:
+                    if inst_id in all_installers:
+                        searchable_text.append(all_installers[inst_id])
+            
+            # Check if query matches any field
+            if not any(q in str(field).lower() for field in searchable_text):
+                continue
+                
+        filtered_plans.append(p)
+
+    # Format dates for display
+    for p in filtered_plans:
+        p['data_instalacao'] = format_date_br(p.get('data_instalacao', ''))
+        
+    return render_template('plans/list.html', 
+                         plans=filtered_plans, 
+                         q=q, 
+                         start_date=start_date, 
+                         end_date=end_date)
+
+
+@plans_bp.route('/new', methods=['GET', 'POST'])
+@login_required
+def new_plan():
+    if request.method == 'POST':
+        return save_plan(None)
+    
+    # Load data for autocomplete
+    context = get_form_context()
+    return render_template('plans/form.html', plan=None, **context)
+
+
+@plans_bp.route('/<id>')
+@login_required
+def view_plan(id):
+    plan = plans_repo.get_by_id(id)
+    if not plan:
+        flash('Plano não encontrado.', 'error')
+        return redirect(url_for('plans.list_plans'))
+
+    # Format dates for view
+    plan['data_instalacao'] = format_date_br(plan.get('data_instalacao', ''))
+    plan['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
+    plan['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
+    plan['fim_veiculacao'] = format_date_br(plan.get('fim_veiculacao', ''))
+
+    # Get installer names
+    all_installers = {i['id']: i for i in installers_repo.get_all()}
+    installer_names = []
+    if plan.get('instaladores'):
+        installers_list = plan['instaladores'] if isinstance(plan['instaladores'], list) else []
+        for inst_id in installers_list:
+            if inst_id in all_installers:
+                installer_names.append(all_installers[inst_id])
+
+    return render_template('plans/view.html', plan=plan, installer_names=installer_names)
+
+
+@plans_bp.route('/<id>/pdf')
+@login_required
+def export_pdf(id):
+    plan = plans_repo.get_by_id(id)
+    if not plan:
+        flash('Plano não encontrado.', 'error')
+        return redirect(url_for('plans.list_plans'))
+
+    # Format dates for PDF
+    plan_data = plan.copy()
+    plan_data['data_instalacao'] = format_date_br(plan.get('data_instalacao', ''))
+    plan_data['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
+    plan_data['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
+    plan_data['fim_veiculacao'] = format_date_br(plan.get('fim_veiculacao', ''))
+
+    # Get installer names
+    all_installers = {i['id']: i for i in installers_repo.get_all()}
+    installer_names = []
+    if plan.get('instaladores'):
+        installers_list = plan['instaladores'] if isinstance(plan['instaladores'], list) else []
+        for inst_id in installers_list:
+            if inst_id in all_installers:
+                installer_names.append(all_installers[inst_id])
+
+    # Get absolute path for logo
+    logo_path = os.path.join(current_app.root_path, 'static', 'images', 'dreambricks_logo_250x160.png')
+
+    # Render template
+    html = render_template(
+        'plans/pdf_template.html', 
+        plan=plan_data, 
+        installer_names=installer_names,
+        now=datetime.now(),
+        logo_path=logo_path
+    )
+
+    # Generate PDF
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    
+    if not pdf.err:
+        result.seek(0)
+        filename = f"plano_instalacao_{secure_filename(plan['nome_projeto'])}.pdf"
+        return send_file(result, download_name=filename, as_attachment=True)
+    
+    flash('Erro ao gerar PDF.', 'error')
+    return redirect(url_for('plans.view_plan', id=id))
+
+
+
+
+
+@plans_bp.route('/<id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_plan(id):
+    plan = plans_repo.get_by_id(id)
+    if not plan:
+        flash('Plano não encontrado.', 'error')
+        return redirect(url_for('plans.list_plans'))
+
+    if request.method == 'POST':
+        return save_plan(id)
+
+    # Format dates for form edit
+    plan['data_instalacao'] = format_date_br(plan.get('data_instalacao', ''))
+    plan['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
+    plan['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
+    plan['fim_veiculacao'] = format_date_br(plan.get('fim_veiculacao', ''))
+
+    context = get_form_context()
+    return render_template('plans/form.html', plan=plan, **context)
+
+
+@plans_bp.route('/<id>/delete', methods=['POST'])
+@admin_required
+def delete_plan(id):
+    plan = plans_repo.get_by_id(id)
+    if plan and plan.get('foto_layout'):
+        # Delete associated image
+        try:
+            filepath = current_app.config['UPLOAD_DIR'] / plan['foto_layout']
+            if filepath.exists():
+                filepath.unlink()
+        except:
+            pass
+    
+    plans_repo.delete(id)
+    flash('Plano removido.', 'success')
+    return redirect(url_for('plans.list_plans'))
+
+
+def get_form_context():
+    """Get all data needed for the form autocomplete"""
+    return {
+        'contacts': contacts_repo.get_all(),
+        'producers': producers_repo.get_all(),
+        'installers': installers_repo.get_all(),
+        'services': services_repo.get_all(),
+        'materials': materials_repo.get_all(),
+        'existing_clients': plans_repo.get_unique_values('cliente')
+    }
+
+
+def save_plan(plan_id):
+    """Save or update a plan"""
+    # Get materials from form
+    materiais = request.form.getlist('materiais[]')
+    
+    # Save new materials for future autocomplete
+    existing_materials = {m['nome'].lower() for m in materials_repo.get_all()}
+    for mat in materiais:
+        if mat.strip() and mat.strip().lower() not in existing_materials:
+            materials_repo.create({'nome': mat.strip()})
+            existing_materials.add(mat.strip().lower())
+    
+    # Get external services from form
+    servicos_tipos = request.form.getlist('servico_tipo[]')
+    servicos_resp = request.form.getlist('servico_responsavel[]')
+    servicos_externos = [
+        {'tipo': t.strip(), 'responsavel': r.strip()} 
+        for t, r in zip(servicos_tipos, servicos_resp) 
+        if t.strip()
+    ]
+    
+    data = {
+        'nome_projeto': request.form.get('nome_projeto', '').strip(),
+        'cliente': request.form.get('cliente', '').strip(),
+        'contato_cliente': request.form.get('contato_cliente', '').strip(),
+        'telefone_contato': request.form.get('telefone_contato', '').strip(),
+        'produtor_responsavel': request.form.get('produtor_responsavel', '').strip(),
+        'data_instalacao': parse_date_br(request.form.get('data_instalacao', '')),
+        'data_remocao': parse_date_br(request.form.get('data_remocao', '')),
+        'inicio_veiculacao': parse_date_br(request.form.get('inicio_veiculacao', '')),
+        'fim_veiculacao': parse_date_br(request.form.get('fim_veiculacao', '')),
+        'endereco': request.form.get('endereco', '').strip(),
+        'descricao': request.form.get('descricao', '').strip(),
+        'instaladores': request.form.getlist('instaladores'),
+        'servicos_externos': servicos_externos,
+        'materiais': materiais,
+        'informacoes_importantes': request.form.get('informacoes_importantes', '').strip(),
+    }
+    
+    if not data['nome_projeto']:
+        flash('Nome do projeto é obrigatório.', 'error')
+        # Format dates back to BR for the form
+        data_to_form = data.copy()
+        data_to_form['data_instalacao'] = format_date_br(data['data_instalacao'])
+        data_to_form['data_remocao'] = format_date_br(data['data_remocao'])
+        data_to_form['inicio_veiculacao'] = format_date_br(data['inicio_veiculacao'])
+        data_to_form['fim_veiculacao'] = format_date_br(data['fim_veiculacao'])
+        
+        context = get_form_context()
+        return render_template('plans/form.html', plan=data_to_form if not plan_id else {**plans_repo.get_by_id(plan_id), **data_to_form}, **context)
+    
+    # Handle file upload
+    if 'foto_layout' in request.files:
+        file = request.files['foto_layout']
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(f"layout_{plan_id or 'new'}_{file.filename}")
+            filepath = current_app.config['UPLOAD_DIR'] / filename
+            file.save(filepath)
+            data['foto_layout'] = filename
+    
+    # Keep existing photo if not uploading new one
+    if plan_id and 'foto_layout' not in data:
+        existing = plans_repo.get_by_id(plan_id)
+        if existing:
+            data['foto_layout'] = existing.get('foto_layout', '')
+    
+    if plan_id:
+        plans_repo.update(plan_id, data)
+        flash('Plano atualizado!', 'success')
+    else:
+        plans_repo.create(data)
+        flash('Plano criado com sucesso!', 'success')
+    
+    return redirect(url_for('plans.list_plans'))

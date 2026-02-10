@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if plan else 'Novo' }} Plano - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'Editar' if plan else 'Novo' }} Plano de Instalação</h1>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Básicas</h2>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="nome_projeto">Nome do Projeto *</label>
+            <input type="text" id="nome_projeto" name="nome_projeto" class="form-input"
+                value="{{ plan.nome_projeto if plan else '' }}" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label" for="cliente">Cliente</label>
+                <input type="text" id="cliente" name="cliente" class="form-input"
+                    value="{{ plan.cliente if plan else '' }}" hx-get="{{ url_for('api.autocomplete_clients') }}"
+                    hx-trigger="keyup changed delay:300ms" hx-target="#cliente-results" hx-swap="innerHTML"
+                    hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="cliente-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label" for="contato_cliente">Contato Cliente</label>
+                <input type="text" id="contato_cliente" name="contato_cliente" class="form-input"
+                    value="{{ plan.contato_cliente if plan else '' }}"
+                    hx-get="{{ url_for('api.autocomplete_contacts') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-target="#contato-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="contato-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="telefone_contato">Telefone Contato</label>
+                <input type="tel" id="telefone_contato" name="telefone_contato" class="form-input mask-phone"
+                    value="{{ plan.telefone_contato if plan else '' }}" placeholder="(11) 99999-9999">
+            </div>
+
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label" for="produtor_responsavel">Produtor Responsável</label>
+                <input type="text" id="produtor_responsavel" name="produtor_responsavel" class="form-input"
+                    value="{{ plan.produtor_responsavel if plan else '' }}"
+                    hx-get="{{ url_for('api.autocomplete_producers') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-target="#produtor-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="produtor-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dates -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Datas do Projeto</h2>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="data_instalacao">Data de Instalação</label>
+                <input type="date" id="data_instalacao" name="data_instalacao" class="form-input"
+                    value="{{ plan.data_instalacao if plan else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="data_remocao">Data de Remoção</label>
+                <input type="date" id="data_remocao" name="data_remocao" class="form-input"
+                    value="{{ plan.data_remocao if plan else '' }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="inicio_veiculacao">Início da Veiculação</label>
+                <input type="date" id="inicio_veiculacao" name="inicio_veiculacao" class="form-input"
+                    value="{{ plan.inicio_veiculacao if plan else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="fim_veiculacao">Fim da Veiculação</label>
+                <input type="date" id="fim_veiculacao" name="fim_veiculacao" class="form-input"
+                    value="{{ plan.fim_veiculacao if plan else '' }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Localização</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="endereco">Endereço de Instalação</label>
+            <input type="text" id="endereco" name="endereco" class="form-input"
+                value="{{ plan.endereco if plan else '' }}" placeholder="Rua, número, bairro, cidade - Estado"
+                autocomplete="off">
+            <div id="address-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Descrição do Projeto</h2>
+        </div>
+
+        <div class="form-group">
+            <textarea id="descricao" name="descricao" class="form-input"
+                placeholder="Descreva o projeto...">{{ plan.descricao if plan else '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- Installation Team -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Equipe de Instalação</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="installer_input">Adicionar Instalador</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="installer_input" class="form-input" placeholder="Digite o nome do instalador"
+                    hx-get="{{ url_for('api.autocomplete_installers') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-target="#installer-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+            </div>
+            <div id="installer-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="installers-list">
+            {% set selected_installers = plan.instaladores if plan and plan.instaladores else [] %}
+            {% for inst_id in selected_installers %}
+            <div class="tag" data-id="{{ inst_id }}">
+                <span class="installer-name">Carregando...</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="instaladores" value="{{ inst_id }}">
+            </div>
+            {% endfor %}
+        </div>
+        {% if session.get('role') == 'admin' %}
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">
+            <a href="{{ url_for('admin.list_installers') }}">Gerenciar instaladores</a>
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- External Services -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Serviços Externos / Equipe Contratada</h2>
+        </div>
+
+        <div id="services-container">
+            {% set plan_services = plan.servicos_externos if plan and plan.servicos_externos else [] %}
+            {% for service in plan_services %}
+            <div class="dynamic-list-item">
+                <div style="flex: 1;">
+                    <input type="text" name="servico_tipo[]" class="form-input" value="{{ service.tipo }}"
+                        placeholder="Tipo de Serviço">
+                </div>
+                <div style="flex: 1;">
+                    <input type="text" name="servico_responsavel[]" class="form-input" value="{{ service.responsavel }}"
+                        placeholder="Responsável">
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm dynamic-list-add" onclick="addServiceRow()">
+            + Adicionar Serviço
+        </button>
+    </div>
+
+    <!-- Materials -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Materiais Principais</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="material_input">Adicionar Material</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="material_input" class="form-input" placeholder="Digite o nome do material"
+                    hx-get="{{ url_for('api.autocomplete_materials') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-target="#material-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addMaterial()">Adicionar</button>
+            </div>
+            <div id="material-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="materials-list">
+            {% set plan_materials = plan.materiais if plan and plan.materiais else [] %}
+            {% for material in plan_materials %}
+            <div class="tag">
+                <span>{{ material }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="materiais[]" value="{{ material }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Importantes</h2>
+        </div>
+
+        <div class="form-group">
+            <textarea id="informacoes_importantes" name="informacoes_importantes" class="form-input"
+                placeholder="Anotações e explicações importantes...">{{ plan.informacoes_importantes if plan else '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- Layout Photo -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Foto do Layout</h2>
+        </div>
+
+        {% if plan and plan.foto_layout %}
+        <div style="margin-bottom: 16px;">
+            <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout) }}" alt="Layout atual"
+                class="image-preview">
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Imagem atual. Faça upload para substituir.
+            </p>
+        </div>
+        {% endif %}
+
+        <label class="image-upload" for="foto_layout">
+            <input type="file" id="foto_layout" name="foto_layout" accept="image/*" onchange="previewImage(this)">
+            <div>
+                <p style="font-size: 1.1rem; margin-bottom: 4px;">📷 Clique ou arraste para fazer upload</p>
+                <p style="color: #64748b; font-size: 0.9rem;">PNG, JPG, GIF até 16MB</p>
+            </div>
+        </label>
+        <img id="image-preview" class="image-preview" style="display: none;">
+    </div>
+
+    <div class="btn-group">
+        <button type="submit" class="btn btn-primary">Salvar Plano</button>
+        <a href="{{ url_for('plans.list_plans') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Autocomplete handling
+    function selectAutocomplete(element, targetInput, value) {
+        const input = document.getElementById(targetInput);
+
+        // Handle installer selection (add to list instead of filling input)
+        if (targetInput === 'installer_input') {
+            addInstaller(value, element.textContent.trim());
+            document.getElementById('installer_input').value = '';
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+            return;
+        }
+
+        if (input) {
+            input.value = value;
+
+            // If selecting a contact, fetch the phone
+            if (targetInput === 'contato_cliente') {
+                fetch(`{{ url_for('api.get_contact_phone') }}?nome=${encodeURIComponent(value)}`)
+                    .then(r => r.text())
+                    .then(phone => {
+                        if (phone) {
+                            document.getElementById('telefone_contato').value = phone;
+                        }
+                    });
+            }
+        }
+        // Hide all autocomplete results
+        document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+    }
+
+    // Add installer to the list
+    function addInstaller(id, label) {
+        const list = document.getElementById('installers-list');
+
+        // Check if already added
+        if (list.querySelector(`[data-id="${id}"]`)) {
+            return; // Already in list
+        }
+
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.dataset.id = id;
+        tag.innerHTML = `
+            <span>${label}</span>
+            <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+            <input type="hidden" name="instaladores" value="${id}">
+        `;
+        list.appendChild(tag);
+    }
+
+    // Load installer names for edit mode
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('#installers-list .tag[data-id]').forEach(tag => {
+            const id = tag.dataset.id;
+            if (id) {
+                fetch(`{{ url_for('api.get_installer', id='PLACEHOLDER') }}`.replace('PLACEHOLDER', id))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.nome) {
+                            tag.querySelector('.installer-name').textContent =
+                                `${data.nome} (${data.especialidade || 'Geral'})`;
+                        }
+                    })
+                    .catch(() => {
+                        tag.querySelector('.installer-name').textContent = 'Instalador não encontrado';
+                    });
+            }
+        });
+    });
+
+    // Show/hide autocomplete results
+    document.addEventListener('htmx:afterSwap', function (evt) {
+        if (evt.detail.target.classList.contains('autocomplete-results')) {
+            evt.detail.target.style.display = 'block';
+        }
+    });
+
+    // Hide autocomplete on click outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+        }
+    });
+
+    // Add service row
+    function addServiceRow() {
+        const container = document.getElementById('services-container');
+        const row = document.createElement('div');
+        row.className = 'dynamic-list-item';
+        row.innerHTML = `
+        <div style="flex: 1;">
+            <input type="text" name="servico_tipo[]" class="form-input" placeholder="Tipo de Serviço">
+        </div>
+        <div style="flex: 1;">
+            <input type="text" name="servico_responsavel[]" class="form-input" placeholder="Responsável">
+        </div>
+        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+    `;
+        container.appendChild(row);
+    }
+
+    // Add material
+    function addMaterial() {
+        const input = document.getElementById('material_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('materials-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="materiais[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+
+    // Handle Enter key on material input
+    document.getElementById('material_input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addMaterial();
+        }
+    });
+
+    // Image preview
+    function previewImage(input) {
+        const preview = document.getElementById('image-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Address Autocomplete (Nominatim)
+    const addressInput = document.getElementById('endereco');
+    const addressResults = document.getElementById('address-results');
+    let addressTimeout = null;
+
+    if (addressInput) {
+        addressInput.addEventListener('input', function () {
+            clearTimeout(addressTimeout);
+            const query = this.value;
+
+            if (query.length < 3) {
+                addressResults.style.display = 'none';
+                return;
+            }
+
+            addressTimeout = setTimeout(() => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=br`)
+                    .then(response => response.json())
+                    .then(data => {
+                        addressResults.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'autocomplete-item';
+                                div.textContent = item.display_name;
+                                div.onclick = function () {
+                                    addressInput.value = item.display_name;
+                                    addressResults.style.display = 'none';
+                                };
+                                addressResults.appendChild(div);
+                            });
+                            addressResults.style.display = 'block';
+                        } else {
+                            addressResults.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Error fetching address:', err));
+            }, 500); // 500ms debounce
+        });
+
+        // Hide on click outside (handled by existing global click listener)
+    }
+</script>
+{% endblock %}

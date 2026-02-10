@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Instaladores - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Instaladores</h1>
+    <a href="{{ url_for('admin.new_installer') }}" class="btn btn-primary">+ Novo Instalador</a>
+</div>
+
+<div class="card">
+    {% if installers %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Especialidade</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for installer in installers %}
+                <tr>
+                    <td>{{ installer.nome }}</td>
+                    <td>{{ installer.especialidade }}</td>
+                    <td>{{ installer.telefone }}</td>
+                    <td>{{ installer.email }}</td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('admin.edit_installer', id=installer.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_installer', id=installer.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover este instalador?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum instalador cadastrado</h3>
+        <p>Clique em "Novo Instalador" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+
+<a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Voltar</a>
+{% endblock %}

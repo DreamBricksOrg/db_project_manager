@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if installer else 'Novo' }} Instalador - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'Editar' if installer else 'Novo' }} Instalador</h1>
+</div>
+
+<div class="card">
+    <form method="POST">
+        <div class="form-group">
+            <label class="form-label" for="nome">Nome *</label>
+            <input type="text" id="nome" name="nome" class="form-input"
+                value="{{ installer.nome if installer else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="especialidade">Especialidade</label>
+            <select id="especialidade" name="especialidade" class="form-input">
+                <option value="">Selecione...</option>
+                <option value="Montagem" {{ 'selected' if installer and installer.especialidade=='Montagem' else '' }}>
+                    Montagem</option>
+                <option value="Elétrica" {{ 'selected' if installer and installer.especialidade=='Elétrica' else '' }}>
+                    Elétrica</option>
+                <option value="Sistemas" {{ 'selected' if installer and installer.especialidade=='Sistemas' else '' }}>
+                    Sistemas</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="telefone">Telefone</label>
+                <input type="tel" id="telefone" name="telefone" class="form-input mask-phone"
+                    value="{{ installer.telefone if installer else '' }}" placeholder="(11) 99999-9999">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-input"
+                    value="{{ installer.email if installer else '' }}" placeholder="email@exemplo.com">
+            </div>
+        </div>
+
+        <h3 class="section-title">🔐 Credenciais de Acesso</h3>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="username">Usuário</label>
+                <input type="text" id="username" name="username" class="form-input"
+                    value="{{ installer.username if installer else '' }}" placeholder="Login para acessar o sistema">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Senha {{ '(deixe em branco para manter)' if installer else ''
+                    }}</label>
+                <input type="password" id="password" name="password" class="form-input"
+                    placeholder="{{ '••••••••' if installer else 'Senha de acesso' }}">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a href="{{ url_for('admin.list_installers') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+id,username,password,role,nome
+400f6b31,admin,admin123,admin,Administrador
+b0ed0e61,user,user123,user,Usuário Teste

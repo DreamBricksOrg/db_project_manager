@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Materiais - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Materiais</h1>
+    <a href="{{ url_for('admin.new_material') }}" class="btn btn-primary">+ Novo Material</a>
+</div>
+
+<div class="card">
+    {% if materials %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                <tr>
+                    <td>{{ material.nome }}</td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('admin.edit_material', id=material.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_material', id=material.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover este material?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum material cadastrado</h3>
+        <p>Clique em "Novo Material" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+
+<a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Voltar</a>
+{% endblock %}

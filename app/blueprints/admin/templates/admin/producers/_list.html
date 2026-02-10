@@ -1,0 +1,44 @@
+<div class="page-header">
+    <h1 class="page-title">Produtores</h1>
+    <a href="{{ url_for('admin.new_producer') }}" class="btn btn-primary">+ Novo Produtor</a>
+</div>
+
+<div class="card">
+    {% if producers %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producer in producers %}
+                <tr>
+                    <td>{{ producer.nome }}</td>
+                    <td>{{ producer.telefone }}</td>
+                    <td>{{ producer.email }}</td>
+                    <td class="table-actions">
+                        <a href="{{ url_for('admin.edit_producer', id=producer.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_producer', id=producer.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover este produtor?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum produtor cadastrado</h3>
+        <p>Clique em "Novo Produtor" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
