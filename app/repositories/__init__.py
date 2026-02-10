@@ -1,30 +1,25 @@
 """Repository instances for each entity"""
 
-from app.repositories.csv_repository import CSVRepository
+from app.repositories.mongo_repository import MongoRepository
 
 # User repository
-users_repo = CSVRepository('users.csv', ['id', 'username', 'password', 'role', 'nome'])
+users_repo = MongoRepository('users')
 
 # Contact repository
-contacts_repo = CSVRepository('contacts.csv', ['id', 'nome', 'telefone', 'email'])
+contacts_repo = MongoRepository('contacts')
 
 # Producer repository (with login credentials)
-producers_repo = CSVRepository('producers.csv', ['id', 'nome', 'telefone', 'email', 'username', 'password'])
+producers_repo = MongoRepository('producers')
 
 # Installer repository (with login credentials)
-installers_repo = CSVRepository('installers.csv', ['id', 'nome', 'telefone', 'email', 'especialidade', 'username', 'password'])
+installers_repo = MongoRepository('installers')
 
 # External service repository
-services_repo = CSVRepository('services.csv', ['id', 'tipo_servico', 'responsavel'])
+services_repo = MongoRepository('services')
 
 # Material repository
-materials_repo = CSVRepository('materials.csv', ['id', 'nome'])
+materials_repo = MongoRepository('materials')
 
 # Installation plan repository
-plans_repo = CSVRepository('plans.csv', [
-    'id', 'nome_projeto', 'cliente', 'contato_cliente', 'telefone_contato',
-    'produtor_responsavel', 'data_instalacao', 'data_remocao', 
-    'inicio_veiculacao', 'fim_veiculacao', 'endereco', 'descricao',
-    'instaladores', 'servicos_externos', 'materiais', 
-    'informacoes_importantes', 'foto_layout'
-])
+plans_repo = MongoRepository('plans')
+
