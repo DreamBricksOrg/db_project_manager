@@ -209,6 +209,56 @@
         </div>
     </div>
 
+    <!-- Tools -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Ferramentas Necessárias</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="tool_input">Adicionar Ferramenta</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="tool_input" class="form-input" placeholder="Digite o nome da ferramenta" 
+                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addTool();}"
+                       hx-get="{{ url_for('api.autocomplete_tools') }}" 
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#tool-results" 
+                       hx-swap="innerHTML" 
+                       hx-vals='{"q": this.value}' 
+                       autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addTool()">Adicionar</button>
+            </div>
+            <div id="tool-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="tools-list">
+            {% set plan_tools = plan.ferramentas if plan and plan.ferramentas else [] %}
+            {% for tool in plan_tools %}
+            <div class="tag">
+                <span>{{ tool }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="ferramentas[]" value="{{ tool }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Lighting -->
+    <div class="card">
+         <div class="card-header">
+            <h2 class="card-title">Iluminação</h2>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="cor_iluminacao">Cor da Iluminação</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <input type="color" id="cor_iluminacao" name="cor_iluminacao" 
+                       value="{{ plan.cor_iluminacao if plan and plan.cor_iluminacao else '#ffffff' }}" 
+                       style="height: 40px; width: 60px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; cursor: pointer;"
+                       oninput="document.getElementById('color-code').textContent = this.value">
+                <span id="color-code" style="font-family: monospace; color: #64748b;">{{ plan.cor_iluminacao if plan and plan.cor_iluminacao else '#ffffff' }}</span>
+            </div>
+        </div>
+
     <!-- Notes -->
     <div class="card">
         <div class="card-header">
@@ -263,6 +313,14 @@
         if (targetInput === 'installer_input') {
             addInstaller(value, element.textContent.trim());
             document.getElementById('installer_input').value = '';
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+            return;
+        }
+
+        // Handle tool selection
+        if (targetInput === 'tool_input') {
+            document.getElementById('tool_input').value = value;
+            addTool();
             document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
             return;
         }
@@ -379,6 +437,32 @@
         if (e.key === 'Enter') {
             e.preventDefault();
             addMaterial();
+        }
+    });
+
+    // Add tool
+    function addTool() {
+        const input = document.getElementById('tool_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('tools-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="ferramentas[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+    
+    // Handle Enter key on tool input
+    document.getElementById('tool_input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTool();
         }
     });
 

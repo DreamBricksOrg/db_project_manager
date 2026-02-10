@@ -4,7 +4,7 @@ from flask import render_template, redirect, url_for, request, flash
 
 from app.blueprints.admin import admin_bp
 from app.blueprints.auth.routes import admin_required
-from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo
+from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo
 
 
 @admin_bp.route('/')
@@ -311,3 +311,62 @@ def delete_material(id):
     materials_repo.delete(id)
     flash('Material removido.', 'success')
     return redirect(url_for('admin.list_materials'))
+
+
+# ============ TOOLS ============
+
+@admin_bp.route('/tools')
+@admin_required
+def list_tools():
+    tools = tools_repo.get_all()
+    return render_template('admin/tools/list.html', tools=tools)
+
+
+@admin_bp.route('/tools/new', methods=['GET', 'POST'])
+@admin_required
+def new_tool():
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip()
+        }
+        
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+            return render_template('admin/tools/form.html', tool=None)
+            
+        tools_repo.create(data)
+        flash('Ferramenta criada com sucesso!', 'success')
+        return redirect(url_for('admin.list_tools'))
+    
+    return render_template('admin/tools/form.html', tool=None)
+
+
+@admin_bp.route('/tools/<id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_tool(id):
+    tool = tools_repo.get_by_id(id)
+    if not tool:
+        flash('Ferramenta não encontrada.', 'error')
+        return redirect(url_for('admin.list_tools'))
+        
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip()
+        }
+        
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            tools_repo.update(id, data)
+            flash('Ferramenta atualizada!', 'success')
+            return redirect(url_for('admin.list_tools'))
+    
+    return render_template('admin/tools/form.html', tool=tool)
+
+
+@admin_bp.route('/tools/<id>/delete', methods=['POST'])
+@admin_required
+def delete_tool(id):
+    tools_repo.delete(id)
+    flash('Ferramenta removida.', 'success')
+    return redirect(url_for('admin.list_tools'))

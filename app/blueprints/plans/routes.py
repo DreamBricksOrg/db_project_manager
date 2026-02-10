@@ -12,7 +12,8 @@ from app.blueprints.plans import plans_bp
 from app.blueprints.auth.routes import login_required, admin_required
 from app.repositories import (
     plans_repo, contacts_repo, producers_repo, 
-    installers_repo, services_repo, materials_repo
+    installers_repo, services_repo, materials_repo,
+    tools_repo
 )
 
 
@@ -247,6 +248,16 @@ def save_plan(plan_id):
     # Get materials from form
     materiais = request.form.getlist('materiais[]')
     
+    # Get tools from form
+    ferramentas = request.form.getlist('ferramentas[]')
+
+    # Save new tools for future autocomplete
+    existing_tools = {t['nome'].lower() for t in tools_repo.get_all()}
+    for tool in ferramentas:
+        if tool.strip() and tool.strip().lower() not in existing_tools:
+            tools_repo.create({'nome': tool.strip()})
+            existing_tools.add(tool.strip().lower())
+
     # Save new materials for future autocomplete
     existing_materials = {m['nome'].lower() for m in materials_repo.get_all()}
     for mat in materiais:
@@ -278,6 +289,8 @@ def save_plan(plan_id):
         'instaladores': request.form.getlist('instaladores'),
         'servicos_externos': servicos_externos,
         'materiais': materiais,
+        'ferramentas': ferramentas,
+        'cor_iluminacao': request.form.get('cor_iluminacao', '#ffffff'),
         'informacoes_importantes': request.form.get('informacoes_importantes', '').strip(),
     }
     

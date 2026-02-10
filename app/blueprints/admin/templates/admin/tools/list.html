@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Ferramentas - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Ferramentas</h1>
+    <a href="{{ url_for('admin.new_tool') }}" class="btn btn-primary">+ Nova Ferramenta</a>
+</div>
+
+<div class="card">
+    {% if tools %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool in tools %}
+                <tr>
+                    <td data-label="Nome">{{ tool.nome }}</td>
+                    <td class="table-actions" data-label="Ações">
+                        <a href="{{ url_for('admin.edit_tool', id=tool.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_tool', id=tool.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover esta ferramenta?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhuma ferramenta cadastrada</h3>
+        <p>Clique em "Nova Ferramenta" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+
+<a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Voltar</a>
+{% endblock %}

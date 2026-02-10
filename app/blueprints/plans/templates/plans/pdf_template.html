@@ -319,6 +319,37 @@
             {% endif %}
         </div>
 
+        <!-- Tools & Lighting -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">⚙️ Especificações Técnicas</div>
+            </div>
+            <table class="grid-table">
+                <tr>
+                    <td class="col-left">
+                        <span class="label">Ferramentas Necessárias</span>
+                         {% set tools = plan.ferramentas if plan.ferramentas else [] %}
+                         {% if tools %}
+                            <div>
+                                {% for tool in tools %}
+                                <span class="tag">{{ tool }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div style="color: #64748b;">Nenhuma ferramenta listada</div>
+                        {% endif %}
+                    </td>
+                    <td class="col-right">
+                        <span class="label">Iluminação</span>
+                        <div style="margin-top: 4pt;">
+                            <div style="display: inline-block; width: 12pt; height: 12pt; background-color: {{ plan.cor_iluminacao or '#ffffff' }}; border: 1px solid #ccc; vertical-align: middle; margin-right: 4pt; border-radius: 2pt;"></div>
+                            <span class="value">{{ plan.cor_iluminacao or '#ffffff' }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <!-- Notes -->
         {% if plan.informacoes_importantes %}
         <div class="card">

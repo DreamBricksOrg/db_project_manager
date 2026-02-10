@@ -57,6 +57,12 @@ class Material:
 
 
 @dataclass
+class Tool:
+    id: str
+    nome: str
+
+
+@dataclass
 class InstallationPlan:
     id: str
     # Basic info
@@ -80,6 +86,10 @@ class InstallationPlan:
     servicos_externos: list[dict] = field(default_factory=list)  # [{tipo, responsavel}]
     # Materials
     materiais: list[str] = field(default_factory=list)
+    # Tools
+    ferramentas: list[str] = field(default_factory=list)
+    # Lighting
+    cor_iluminacao: str = '#ffffff'  # Default white
     # Notes
     informacoes_importantes: str = ''
     # Layout photo filename

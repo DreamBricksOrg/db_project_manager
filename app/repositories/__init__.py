@@ -23,3 +23,6 @@ materials_repo = MongoRepository('materials')
 # Installation plan repository
 plans_repo = MongoRepository('plans')
 
+# Tool repository
+tools_repo = MongoRepository('tools')
+

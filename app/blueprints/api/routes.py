@@ -6,7 +6,8 @@ from app.blueprints.api import api_bp
 from app.blueprints.auth.routes import login_required
 from app.repositories import (
     contacts_repo, producers_repo, installers_repo, 
-    services_repo, materials_repo, plans_repo
+    services_repo, materials_repo, plans_repo,
+    tools_repo
 )
 
 
@@ -80,6 +81,18 @@ def autocomplete_materials():
         for m in materials if query in m['nome'].lower()
     ][:10]
     return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='material_input')
+
+
+@api_bp.route('/autocomplete/tools')
+@login_required
+def autocomplete_tools():
+    query = request.args.get('q', '').lower()
+    tools = tools_repo.get_all()
+    items = [
+        {'value': t['nome'], 'label': t['nome']}
+        for t in tools if query in t['nome'].lower()
+    ][:10]
+    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='tool_input')
 
 
 @api_bp.route('/autocomplete/services')

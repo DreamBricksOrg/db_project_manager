@@ -109,5 +109,26 @@
             </svg>
         </div>
     </a>
+    <!-- Ferramentas -->
+    <a href="{{ url_for('admin.list_tools') }}" class="admin-card">
+        <div class="admin-card-icon warning">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10.375 2.25a4.125 4.125 0 100 8.25 4.125 4.125 0 000-8.25zm0 10.125a5.5 5.5 0 00-4.5 2.25l-1.5 2.25 2.25 2.25 2.25-1.5a5.5 5.5 0 002.25-4.5v-.75z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+            </svg>
+        </div>
+        <div class="admin-card-title">Ferramentas</div>
+        <div class="admin-card-description">Gerenciar catálogo de ferramentas</div>
+        <div class="admin-card-action">
+            Gerenciar
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" style="width:16px;height:16px">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </div>
+    </a>
 </div>
 {% endblock %}
