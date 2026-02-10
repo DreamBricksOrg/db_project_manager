@@ -21,8 +21,8 @@
             <tbody>
                 {% for material in materials %}
                 <tr>
-                    <td>{{ material.nome }}</td>
-                    <td class="table-actions">
+                    <td data-label="Nome">{{ material.nome }}</td>
+                    <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_material', id=material.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
                         <form method="POST" action="{{ url_for('admin.delete_material', id=material.id) }}"

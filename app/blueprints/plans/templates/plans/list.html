@@ -89,18 +89,18 @@
         <tbody>
             {% for plan in plans %}
             <tr>
-                <td><strong>{{ plan.nome_projeto }}</strong></td>
-                <td>{{ plan.cliente or '—' }}</td>
-                <td>
+                <td data-label="Projeto"><strong>{{ plan.nome_projeto }}</strong></td>
+                <td data-label="Cliente">{{ plan.cliente or '—' }}</td>
+                <td data-label="Data Instalação">
                     {% if plan.data_instalacao %}
                     <span class="badge badge-info">{{ plan.data_instalacao }}</span>
                     {% else %}
                     <span class="badge badge-neutral">Não definida</span>
                     {% endif %}
                 </td>
-                <td>{{ plan.endereco[:40] if plan.endereco else '—' }}{{ '...' if plan.endereco and plan.endereco|length
+                <td data-label="Endereço">{{ plan.endereco[:40] if plan.endereco else '—' }}{{ '...' if plan.endereco and plan.endereco|length
                     > 40 else '' }}</td>
-                <td class="table-actions">
+                <td class="table-actions" data-label="Ações">
                     <a href="{{ url_for('plans.view_plan', id=plan.id) }}" class="btn btn-sm btn-secondary">Ver</a>
                     <a href="{{ url_for('plans.edit_plan', id=plan.id) }}" class="btn btn-sm btn-secondary">Editar</a>
                     {% if session.get('role') == 'admin' %}

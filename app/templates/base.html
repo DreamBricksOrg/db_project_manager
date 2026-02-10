@@ -16,13 +16,35 @@
         .swal2-popup {
             font-family: var(--font-family) !important;
             border-radius: var(--radius-lg) !important;
+            padding: 2rem !important;
+            box-shadow: var(--shadow-xl) !important;
+            border: 1px solid var(--color-ice);
+        }
+        .swal2-title {
+            color: var(--color-navy) !important;
+            font-weight: 700 !important;
+        }
+        .swal2-html-container {
+            color: var(--color-slate) !important;
         }
         .swal2-confirm {
             background-color: var(--color-teal) !important;
             border-radius: var(--radius-md) !important;
+            font-weight: 600 !important;
+            padding: 0.75rem 1.5rem !important;
+            transition: all 0.2s !important;
+        }
+        .swal2-confirm:hover {
+            background-color: var(--color-navy) !important;
+            transform: translateY(-1px);
         }
         .swal2-cancel {
             border-radius: var(--radius-md) !important;
+            font-weight: 600 !important;
+            padding: 0.75rem 1.5rem !important;
+        }
+        .swal2-icon {
+            border-width: 3px !important;
         }
     </style>
 </head>
@@ -42,9 +64,7 @@
     </div>
     {% else %}
     <!-- Login page without sidebar -->
-    <div class="container">
-        {% block login_content %}{% endblock %}
-    </div>
+    {% block login_content %}{% endblock %}
     {% endif %}
 
     <script>
@@ -53,11 +73,14 @@
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000,
+            timer: 4000,
             timerProgressBar: true,
             didOpen: (toast) => {
                 toast.addEventListener('mouseenter', Swal.stopTimer)
                 toast.addEventListener('mouseleave', Swal.resumeTimer)
+            },
+            customClass: {
+                popup: 'colored-toast'
             }
         });
 
@@ -67,19 +90,28 @@
                     {% if category == 'error' or category == 'danger' %}
                         Swal.fire({
                             icon: 'error',
-                            title: 'Erro!',
+                            title: 'Ops...',
                             text: '{{ message }}',
-                            confirmButtonColor: 'var(--color-teal)'
+                            confirmButtonText: 'Entendido'
                         });
                     {% elif category == 'success' %}
                         Toast.fire({
                             icon: 'success',
-                            title: '{{ message }}'
+                            title: 'Sucesso!',
+                            text: '{{ message }}'
+                        });
+                    {% elif category == 'warning' %}
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atenção',
+                            text: '{{ message }}',
+                            confirmButtonColor: 'var(--color-warning)'
                         });
                     {% else %}
                         Toast.fire({
                             icon: 'info',
-                            title: '{{ message }}'
+                            title: 'Informação',
+                            text: '{{ message }}'
                         });
                     {% endif %}
                 {% endfor %}

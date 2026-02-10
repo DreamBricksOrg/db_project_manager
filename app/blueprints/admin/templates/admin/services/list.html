@@ -22,9 +22,9 @@
             <tbody>
                 {% for service in services %}
                 <tr>
-                    <td>{{ service.tipo_servico }}</td>
-                    <td>{{ service.responsavel }}</td>
-                    <td class="table-actions">
+                    <td data-label="Tipo de Serviço">{{ service.tipo_servico }}</td>
+                    <td data-label="Responsável">{{ service.responsavel }}</td>
+                    <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_service', id=service.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
                         <form method="POST" action="{{ url_for('admin.delete_service', id=service.id) }}"

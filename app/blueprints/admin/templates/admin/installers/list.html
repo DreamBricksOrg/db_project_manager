@@ -24,11 +24,11 @@
             <tbody>
                 {% for installer in installers %}
                 <tr>
-                    <td>{{ installer.nome }}</td>
-                    <td>{{ installer.especialidade }}</td>
-                    <td>{{ installer.telefone }}</td>
-                    <td>{{ installer.email }}</td>
-                    <td class="table-actions">
+                    <td data-label="Nome">{{ installer.nome }}</td>
+                    <td data-label="Especialidade">{{ installer.especialidade }}</td>
+                    <td data-label="Telefone">{{ installer.telefone }}</td>
+                    <td data-label="Email">{{ installer.email }}</td>
+                    <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_installer', id=installer.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
                         <form method="POST" action="{{ url_for('admin.delete_installer', id=installer.id) }}"

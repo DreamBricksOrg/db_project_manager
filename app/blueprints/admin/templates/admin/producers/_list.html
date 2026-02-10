@@ -18,10 +18,10 @@
             <tbody>
                 {% for producer in producers %}
                 <tr>
-                    <td>{{ producer.nome }}</td>
-                    <td>{{ producer.telefone }}</td>
-                    <td>{{ producer.email }}</td>
-                    <td class="table-actions">
+                    <td data-label="Nome">{{ producer.nome }}</td>
+                    <td data-label="Telefone">{{ producer.telefone }}</td>
+                    <td data-label="Email">{{ producer.email }}</td>
+                    <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_producer', id=producer.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
                         <form method="POST" action="{{ url_for('admin.delete_producer', id=producer.id) }}"

@@ -80,6 +80,7 @@ body {
 
 .page {
     padding: 40px 20px;
+    margin: 0 auto;
 }
 
 /* Navigation */
@@ -653,6 +654,7 @@ textarea.form-input {
 .main-content .page {
     padding: 32px;
     max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* Mobile Toggle */
@@ -1181,6 +1183,63 @@ textarea.form-input {
 
     .admin-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Responsive Tables to Cards */
+    .table-wrapper {
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .table, .table thead, .table tbody, .table th, .table td, .table tr {
+        display: block;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tr {
+        background: var(--color-white);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-ice);
+    }
+
+    .table td {
+        padding: 8px 0;
+        border-bottom: 1px solid var(--color-ice);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+    }
+
+    .table td:last-child {
+        border-bottom: none;
+        padding-top: 16px;
+        justify-content: center;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: var(--color-slate);
+        text-align: left;
+    }
+
+    .table-actions {
+        width: 100%;
+        justify-content: stretch !important;
+    }
+
+    .table-actions .btn {
+        flex: 1;
     }
 }
 

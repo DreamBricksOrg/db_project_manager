@@ -18,10 +18,10 @@
             <tbody>
                 {% for contact in contacts %}
                 <tr>
-                    <td>{{ contact.nome }}</td>
-                    <td>{{ contact.telefone }}</td>
-                    <td>{{ contact.email }}</td>
-                    <td class="table-actions">
+                    <td data-label="Nome">{{ contact.nome }}</td>
+                    <td data-label="Telefone">{{ contact.telefone }}</td>
+                    <td data-label="Email">{{ contact.email }}</td>
+                    <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_contact', id=contact.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
                         <form method="POST" action="{{ url_for('admin.delete_contact', id=contact.id) }}"
