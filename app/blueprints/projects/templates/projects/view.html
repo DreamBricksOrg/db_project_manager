@@ -1,126 +1,383 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ project.nome }}</h2>
-        <div>
-            <a href="{{ url_for('projects.edit_project', id=project.id) }}" class="btn btn-outline-primary">
-                <i class="fas fa-edit"></i> Editar Projeto
-            </a>
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ project.nome }}</h1>
+        <p class="text-slate small">Visão geral do projeto</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+            Voltar
+        </a>
+        <a href="{{ url_for('projects.edit_project', id=project.id) }}" class="btn btn-primary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>
+            Editar
+        </a>
+    </div>
+</div>
+
+<!-- Status Metrics -->
+<div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <!-- Status -->
+    <div class="metric-card">
+        <div class="metric-icon cyan">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+        </div>
+        <span class="metric-label">Status</span>
+        <span class="badge-info" style="display:inline-block; padding:4px 14px; border-radius:var(--radius-full); font-size:0.85rem; font-weight:600;">{{ project.status }}</span>
+    </div>
+    <!-- Progresso -->
+    <div class="metric-card">
+        <div class="metric-icon success">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
+        </div>
+        <span class="metric-label">Progresso</span>
+        <div class="d-flex align-items-center gap-2" style="margin-top:4px;">
+            <div class="pv-progress-track">
+                <div class="pv-progress-fill {{ 'complete' if project.conclusao == 100 else '' }}" style="width: {{ project.conclusao }}%"></div>
+            </div>
+            <span class="metric-value" style="font-size:1.25rem;">{{ project.conclusao }}%</span>
         </div>
     </div>
-
-    <div class="row">
-        <!-- Main Content -->
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">Visão Geral</div>
-                <div class="card-body">
-                    <p><strong>Cliente:</strong> {{ project.cliente }}</p>
-                    <p><strong>Descrição:</strong> {{ project.descricao }}</p>
-                    <p><strong>Endereço:</strong> {{ project.endereco }}</p>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Produtor DB</h6>
-                            <p>{{ project.produtor_db }} ({{ project.produtor_db_contato }})</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Produtor Externo</h6>
-                            <p>{{ project.produtor_ext }} ({{ project.produtor_ext_contato }})</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Images -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header">Referência do Cliente</div>
-                        <div class="card-body text-center">
-                            {% if project.imagem_referencia %}
-                            <img src="{{ url_for('static', filename='uploads/' + project.imagem_referencia) }}" class="img-fluid rounded" style="max-height: 200px;">
-                            {% else %}
-                            <p class="text-muted">Sem imagem</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header">Layout Rafa</div>
-                        <div class="card-body text-center">
-                            {% if project.layout_rafa %}
-                            <img src="{{ url_for('static', filename='uploads/' + project.layout_rafa) }}" class="img-fluid rounded" style="max-height: 200px;">
-                            {% else %}
-                            <p class="text-muted">Sem layout</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {% if project.galeria %}
-            <div class="card mb-4">
-                <div class="card-header">Galeria</div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for img in project.galeria %}
-                        <div class="col-md-3 mb-3">
-                            <img src="{{ url_for('static', filename='uploads/' + img) }}" class="img-fluid rounded shadow-sm">
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
+    <!-- Datas -->
+    <div class="metric-card">
+        <div class="metric-icon warning">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
         </div>
-
-        <!-- Sidebar / Meta -->
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">Status</div>
-                <div class="card-body">
-                    <h3 class="text-center mb-3">{{ project.conclusao }}%</h3>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: {{ project.conclusao }}%"></div>
-                    </div>
-                    <div class="text-center">
-                        <span class="badge bg-primary">{{ project.status }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">Datas</div>
-                <div class="card-body">
-                    <ul class="list-unstyled">
-                        <li><strong>Instalação:</strong> {{ project.data_instalacao }}</li>
-                        <li><strong>Remoção:</strong> {{ project.data_remocao }}</li>
-                        <li><strong>Veiculação:</strong> {{ project.data_veiculacao }}</li>
-                    </ul>
-                    {% if project.datas_parciais %}
-                    <h6>Parciais:</h6>
-                    <ul>
-                        {% for data in project.datas_parciais %}
-                        <li>{{ data }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            {% if project.link_drive %}
-            <div class="d-grid mb-4">
-                <a href="{{ project.link_drive }}" target="_blank" class="btn btn-outline-dark">
-                    <i class="fab fa-google-drive"></i> Acessar Drive
-                </a>
-            </div>
-            {% endif %}
+        <span class="metric-label">Período</span>
+        <div style="font-size:0.9rem; font-weight:600; margin-top:4px;">
+            <span style="color:var(--color-success)">{{ project.data_instalacao }}</span>
+            <span class="text-slate"> → </span>
+            <span style="color:var(--color-danger)">{{ project.data_remocao }}</span>
         </div>
     </div>
 </div>
+
+<!-- Main Layout: 2-column grid -->
+<div class="pv-layout">
+    <!-- Left Column -->
+    <div class="pv-main">
+        <!-- Visão Geral -->
+        <div class="card">
+            <div class="section-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+                <h3>Visão Geral</h3>
+            </div>
+            <dl class="plan-detail">
+                <dt>Cliente</dt>
+                <dd><strong>{{ project.cliente }}</strong></dd>
+                <dt>Descrição</dt>
+                <dd>{{ project.descricao }}</dd>
+                <dt>Endereço</dt>
+                <dd><a href="https://www.google.com/maps/search/{{ project.endereco | urlencode }}" target="_blank" style="color:var(--color-teal); text-decoration:none;">{{ project.endereco }} <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px;vertical-align:middle;opacity:0.6;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></a></dd>
+            </dl>
+
+            <h4 class="section-title" style="margin-top:24px;">Equipe e Contatos</h4>
+            <div class="grid-2">
+                <div class="pv-contact-card">
+                    <span class="pv-contact-label" style="color: var(--color-teal);">Produtor DB</span>
+                    <strong>{{ project.produtor_db }}</strong>
+                    <small class="text-muted">{{ project.produtor_db_contato }}</small>
+                </div>
+                <div class="pv-contact-card">
+                    <span class="pv-contact-label" style="color: var(--color-navy);">Produtor Externo</span>
+                    <strong>{{ project.produtor_ext }}</strong>
+                    <small class="text-muted">{{ project.produtor_ext_contato }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagens -->
+        <div class="card">
+            <div class="section-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M2.25 18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V6a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 2.25 6v12Z"/></svg>
+                <h3>Imagens do Projeto</h3>
+            </div>
+            <div class="grid-2">
+                <div class="pv-image-card">
+                    <span class="pv-image-label">Referência do Cliente</span>
+                    {% if project.imagem_referencia %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.imagem_referencia) }}" alt="Referência" class="pv-image">
+                    {% else %}
+                    <div class="pv-image-empty">Sem imagem</div>
+                    {% endif %}
+                </div>
+                <div class="pv-image-card">
+                    <span class="pv-image-label">Layout Rafa</span>
+                    {% if project.layout_rafa %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.layout_rafa) }}" alt="Layout" class="pv-image">
+                    {% else %}
+                    <div class="pv-image-empty">Sem layout</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if project.galeria %}
+            <h4 class="section-title">Galeria</h4>
+            <div class="pv-gallery">
+                {% for img in project.galeria %}
+                <img src="{{ url_for('static', filename='uploads/' + img) }}" alt="Galeria {{ loop.index }}" class="pv-gallery-img">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column (Sidebar) -->
+    <div class="pv-aside">
+        <!-- Datas -->
+        <div class="card">
+            <div class="section-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
+                <h3>Calendário</h3>
+            </div>
+            <div class="pv-date-list">
+                <div class="pv-date-item">
+                    <span>Instalação</span>
+                    <span class="badge-success" style="padding:3px 10px; border-radius:var(--radius-full); font-size:0.8rem;">{{ project.data_instalacao }}</span>
+                </div>
+                <div class="pv-date-item">
+                    <span>Veiculação Início</span>
+                    <span class="badge-info" style="padding:3px 10px; border-radius:var(--radius-full); font-size:0.8rem;">{{ project.inicio_veiculacao }}</span>
+                </div>
+                <div class="pv-date-item">
+                    <span>Veiculação Fim</span>
+                    <span class="badge-info" style="padding:3px 10px; border-radius:var(--radius-full); font-size:0.8rem;">{{ project.fim_veiculacao }}</span>
+                </div>
+                <div class="pv-date-item">
+                    <span>Remoção</span>
+                    <span class="badge-danger" style="padding:3px 10px; border-radius:var(--radius-full); font-size:0.8rem;">{{ project.data_remocao }}</span>
+                </div>
+            </div>
+
+            {% if project.datas_parciais %}
+            <h4 class="section-title" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-slate);">Datas Parciais</h4>
+            <div class="pv-date-list">
+                {% for item in project.datas_parciais %}
+                <div class="pv-date-item">
+                    <span>{{ item.descricao if item.descricao else 'Parcial ' ~ loop.index }}</span>
+                    <span class="badge-neutral" style="padding:3px 10px; border-radius:var(--radius-full); font-size:0.8rem;">{{ item.data }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Links Rápidos -->
+        <div class="card">
+            <div class="section-header">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                <h3>Ações Rápidas</h3>
+            </div>
+            <div class="pv-quick-links">
+                {% if plan %}
+                <a href="{{ url_for('plans.view_plan', id=plan.id) }}" class="pv-quick-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 3h1.5c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z"/></svg>
+                    <span>Ver Plano de Instalação</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-left:auto;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </a>
+                {% else %}
+                <a href="{{ url_for('plans.new_plan', project_id=project.id) }}" class="pv-quick-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    <span>Criar Plano de Instalação</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-left:auto;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </a>
+                {% endif %}
+
+                {% if project.link_drive %}
+                <a href="{{ project.link_drive }}" target="_blank" class="pv-quick-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
+                    <span>Acessar Drive</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-left:auto;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   PROJECT VIEW - Scoped Styles
+   ============================================ */
+
+/* 2-column layout */
+.pv-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Progress bar */
+.pv-progress-track {
+    flex: 1;
+    height: 8px;
+    background: var(--color-ice);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.pv-progress-fill {
+    height: 100%;
+    background: var(--color-teal);
+    border-radius: var(--radius-full);
+    transition: width 0.6s ease;
+}
+
+.pv-progress-fill.complete {
+    background: var(--color-success);
+}
+
+/* Contact cards */
+.pv-contact-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    background: var(--color-slate-light);
+    border-radius: var(--radius-md);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.pv-contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.pv-contact-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Image cards */
+.pv-image-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pv-image-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-slate);
+}
+
+.pv-image {
+    width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-ice);
+    background: var(--color-slate-light);
+}
+
+.pv-image-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    background: var(--color-slate-light);
+    border-radius: var(--radius-md);
+    color: var(--color-slate);
+    font-size: 0.9rem;
+}
+
+/* Gallery grid */
+.pv-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.pv-gallery-img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-ice);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    cursor: pointer;
+}
+
+.pv-gallery-img:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+/* Date list */
+.pv-date-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-date-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-ice);
+    font-size: 0.9rem;
+}
+
+.pv-date-item:last-child {
+    border-bottom: none;
+}
+
+/* Quick links */
+.pv-quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pv-quick-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-slate-light);
+    color: var(--color-navy);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.pv-quick-link:visited {
+    color: var(--color-navy);
+}
+
+.pv-quick-link:hover {
+    background: var(--color-ice);
+    transform: translateX(4px);
+}
+
+.pv-quick-link svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--color-teal);
+}
+
+/* Responsive */
+@media (max-width: 1023px) {
+    .pv-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .metrics-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
 {% endblock %}

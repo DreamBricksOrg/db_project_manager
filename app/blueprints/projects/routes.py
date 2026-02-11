@@ -73,6 +73,8 @@ def view_project(id):
     # Format display dates
     project['data_instalacao'] = format_date_br(project.get('data_instalacao', ''))
     project['data_remocao'] = format_date_br(project.get('data_remocao', ''))
+    project['inicio_veiculacao'] = format_date_br(project.get('inicio_veiculacao', ''))
+    project['fim_veiculacao'] = format_date_br(project.get('fim_veiculacao', ''))
     
     # Check for child entities
     plan = next((p for p in plans_repo.get_all() if p.get('project_id') == id), None)
