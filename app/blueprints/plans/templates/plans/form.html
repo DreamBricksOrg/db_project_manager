@@ -269,49 +269,56 @@
                 placeholder="Anotações e explicações importantes...">{{ plan.informacoes_importantes if plan else '' }}</textarea>
         </div>
     </div>
+    
+    <!-- Hidden inputs for pre-filled images (from Project) -->
+    {% if plan and not plan.id %}
+        {% if plan.foto_layout %}
+        <input type="hidden" name="prefilled_foto_layout" value="{{ plan.foto_layout }}">
+        {% endif %}
+        {% if plan.imagem_referencia %}
+        <input type="hidden" name="prefilled_imagem_referencia" value="{{ plan.imagem_referencia }}">
+        {% endif %}
+    {% endif %}
 
-    <!-- Layout Photo -->
+    <!-- Files & Media -->
     <div class="card">
         <div class="card-header">
-            <h2 class="card-title">Foto do Layout</h2>
+            <h2 class="card-title">Arquivos e Mídia</h2>
         </div>
 
-        {% if plan and plan.foto_layout %}
-        <div style="margin-bottom: 16px;">
-            <label class="form-label">Foto do Layout</label>
-            <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout) }}" alt="Layout atual"
-                class="image-preview">
-            <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Imagem atual. Faça upload para substituir.
-            </p>
-        </div>
-        {% endif %}
-        
-        {% if plan and plan.imagem_referencia %}
-        <div style="margin-bottom: 16px;">
-            <label class="form-label">Imagem de Referência</label>
-            <img src="{{ url_for('static', filename='uploads/' + plan.imagem_referencia) }}" alt="Ref atual"
-                class="image-preview">
-        </div>
-        {% endif %}
-
-        <label class="image-upload mb-4" for="foto_layout">
-            <input type="file" id="foto_layout" name="foto_layout" accept="image/*" onchange="previewImage(this, 'image-preview-layout')">
-            <div>
-                <p style="font-size: 1.1rem; margin-bottom: 4px;">📷 Layout: Clique ou arraste</p>
-                <p style="color: #64748b; font-size: 0.9rem;">PNG, JPG, GIF até 16MB</p>
+        <div class="card mb-3 bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Foto do Layout</h6>
+                <div class="d-flex align-items-center gap-3">
+                    {% if plan and plan.foto_layout %}
+                    <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout) }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <input type="file" name="foto_layout" class="form-input mb-0" accept="image/*">
+                        {% if plan and plan.foto_layout %}
+                        <small class="text-muted">Imagem atual. Selecione outra para substituir.</small>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </label>
-        <img id="image-preview-layout" class="image-preview" style="display: none;">
+        </div>
 
-        <label class="image-upload" for="imagem_referencia">
-            <input type="file" id="imagem_referencia" name="imagem_referencia" accept="image/*" onchange="previewImage(this, 'image-preview-ref')">
-            <div>
-                <p style="font-size: 1.1rem; margin-bottom: 4px;">🖼️ Referência: Clique ou arraste</p>
-                <p style="color: #64748b; font-size: 0.9rem;">PNG, JPG, GIF até 16MB</p>
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Imagem de Referência</h6>
+                <div class="d-flex align-items-center gap-3">
+                    {% if plan and plan.imagem_referencia %}
+                    <img src="{{ url_for('static', filename='uploads/' + plan.imagem_referencia) }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <input type="file" name="imagem_referencia" class="form-input mb-0" accept="image/*">
+                        {% if plan and plan.imagem_referencia %}
+                        <small class="text-muted">Imagem atual. Selecione outra para substituir.</small>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </label>
-        <img id="image-preview-ref" class="image-preview" style="display: none;">
-        <img id="image-preview" class="image-preview" style="display: none;">
+        </div>
     </div>
 
     <div class="btn-group">

@@ -359,22 +359,26 @@ def save_plan(plan_id):
     
     # Handle file uploads
     # Foto Layout
-    if 'foto_layout' in request.files:
+    if 'foto_layout' in request.files and request.files['foto_layout'].filename:
         file = request.files['foto_layout']
-        if file and file.filename and allowed_file(file.filename):
+        if file and allowed_file(file.filename):
             filename = secure_filename(f"layout_{plan_id or 'new'}_{file.filename}")
             filepath = os.path.join(current_app.config['UPLOAD_DIR'], filename)
             file.save(filepath)
             data['foto_layout'] = filename
+    elif request.form.get('prefilled_foto_layout'):
+        data['foto_layout'] = request.form.get('prefilled_foto_layout')
             
     # Imagem Referencia
-    if 'imagem_referencia' in request.files:
+    if 'imagem_referencia' in request.files and request.files['imagem_referencia'].filename:
         file = request.files['imagem_referencia']
-        if file and file.filename and allowed_file(file.filename):
+        if file and allowed_file(file.filename):
             filename = secure_filename(f"ref_{plan_id or 'new'}_{file.filename}")
             filepath = os.path.join(current_app.config['UPLOAD_DIR'], filename)
             file.save(filepath)
             data['imagem_referencia'] = filename
+    elif request.form.get('prefilled_imagem_referencia'):
+        data['imagem_referencia'] = request.form.get('prefilled_imagem_referencia')
     
     
     if plan_id:

@@ -226,6 +226,12 @@ textarea.form-input {
     cursor: pointer;
     transition: all 0.2s;
     text-decoration: none;
+    color: inherit; /* Fallback */
+}
+
+/* Ensure visited links don't change color */
+.btn:visited {
+    color: inherit;
 }
 
 .btn-primary {
@@ -233,13 +239,22 @@ textarea.form-input {
     color: var(--color-white);
 }
 
+.btn-primary:visited {
+    color: var(--color-white);
+}
+
 .btn-primary:hover {
     background: var(--color-navy);
     transform: translateY(-1px);
+    color: var(--color-white);
 }
 
 .btn-secondary {
     background: var(--color-ice);
+    color: var(--color-navy);
+}
+
+.btn-secondary:visited {
     color: var(--color-navy);
 }
 
@@ -248,13 +263,32 @@ textarea.form-input {
     color: var(--color-white);
 }
 
+.btn-info {
+    background: #0ea5e9; /* Sky 500 */
+    color: var(--color-white);
+}
+
+.btn-info:visited {
+    color: var(--color-white);
+}
+
+.btn-info:hover {
+    background: #0284c7; /* Sky 600 */
+    color: var(--color-white);
+}
+
 .btn-danger {
     background: #ef4444;
     color: var(--color-white);
 }
 
+.btn-danger:visited {
+    color: var(--color-white);
+}
+
 .btn-danger:hover {
     background: #dc2626;
+    color: var(--color-white);
 }
 
 .btn-sm {
