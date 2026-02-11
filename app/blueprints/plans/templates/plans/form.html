@@ -241,6 +241,40 @@
         </div>
     </div>
 
+    <!-- Equipment -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Equipamentos</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="equipment_input">Adicionar Equipamento</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="equipment_input" class="form-input" placeholder="Digite o nome do equipamento"
+                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addEquipment();}"
+                       hx-get="{{ url_for('api.autocomplete_equipment') }}" 
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#equipment-results" 
+                       hx-swap="innerHTML" 
+                       hx-vals='{"q": this.value}' 
+                       autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addEquipment()">Adicionar</button>
+            </div>
+            <div id="equipment-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="equipment-list">
+            {% set plan_equipment = plan.equipamentos if plan and plan.equipamentos else [] %}
+            {% for eq in plan_equipment %}
+            <div class="tag">
+                <span>{{ eq }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="equipamentos[]" value="{{ eq }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <!-- Lighting -->
     <div class="card">
          <div class="card-header">
@@ -345,6 +379,14 @@
         if (targetInput === 'tool_input') {
             document.getElementById('tool_input').value = value;
             addTool();
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+            return;
+        }
+
+        // Handle equipment selection
+        if (targetInput === 'equipment_input') {
+            document.getElementById('equipment_input').value = value;
+            addEquipment();
             document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
             return;
         }
@@ -477,6 +519,24 @@
         <span>${value}</span>
         <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
         <input type="hidden" name="ferramentas[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+
+    // Add equipment
+    function addEquipment() {
+        const input = document.getElementById('equipment_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('equipment-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="equipamentos[]" value="${value}">
     `;
         list.appendChild(tag);
         input.value = '';

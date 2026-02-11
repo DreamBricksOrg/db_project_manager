@@ -7,7 +7,7 @@ from app.blueprints.auth.routes import login_required
 from app.repositories import (
     contacts_repo, producers_repo, installers_repo, 
     services_repo, materials_repo, plans_repo,
-    tools_repo, clients_repo
+    tools_repo, clients_repo, equipment_repo
 )
 
 
@@ -113,6 +113,18 @@ def autocomplete_tools():
         for t in tools if query in t['nome'].lower()
     ][:10]
     return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='tool_input')
+
+
+@api_bp.route('/autocomplete/equipment')
+@login_required
+def autocomplete_equipment():
+    query = request.args.get('q', '').lower()
+    equipment = equipment_repo.get_all()
+    items = [
+        {'value': e['nome'], 'label': e['nome']}
+        for e in equipment if query in e['nome'].lower()
+    ][:10]
+    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='equipment_input')
 
 
 @api_bp.route('/autocomplete/services')

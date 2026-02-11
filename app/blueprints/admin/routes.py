@@ -4,7 +4,7 @@ from flask import render_template, redirect, url_for, request, flash
 
 from app.blueprints.admin import admin_bp
 from app.blueprints.auth.routes import admin_required
-from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo
+from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo
 
 
 @admin_bp.route('/')
@@ -434,3 +434,58 @@ def delete_tool(id):
     tools_repo.delete(id)
     flash('Ferramenta removida.', 'success')
     return redirect(url_for('admin.list_tools'))
+
+
+# ============ EQUIPMENT ============
+
+@admin_bp.route('/equipment')
+@admin_required
+def list_equipment():
+    equipment = equipment_repo.get_all()
+    return render_template('admin/equipment/list.html', equipment=equipment)
+
+
+@admin_bp.route('/equipment/new', methods=['GET', 'POST'])
+@admin_required
+def new_equipment():
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip()
+        }
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            equipment_repo.create(data)
+            flash('Equipamento criado com sucesso!', 'success')
+            return redirect(url_for('admin.list_equipment'))
+    return render_template('admin/equipment/form.html', equipment=None)
+
+
+@admin_bp.route('/equipment/<id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_equipment(id):
+    eq = equipment_repo.get_by_id(id)
+    if not eq:
+        flash('Equipamento não encontrado.', 'error')
+        return redirect(url_for('admin.list_equipment'))
+    
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip()
+        }
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            equipment_repo.update(id, data)
+            flash('Equipamento atualizado!', 'success')
+            return redirect(url_for('admin.list_equipment'))
+    
+    return render_template('admin/equipment/form.html', equipment=eq)
+
+
+@admin_bp.route('/equipment/<id>/delete', methods=['POST'])
+@admin_required
+def delete_equipment(id):
+    equipment_repo.delete(id)
+    flash('Equipamento removido.', 'success')
+    return redirect(url_for('admin.list_equipment'))

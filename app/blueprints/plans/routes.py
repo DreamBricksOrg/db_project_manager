@@ -13,7 +13,7 @@ from app.blueprints.auth.routes import login_required, admin_required
 from app.repositories import (
     plans_repo, contacts_repo, producers_repo, 
     installers_repo, services_repo, materials_repo,
-    tools_repo
+    tools_repo, equipment_repo
 )
 
 
@@ -302,6 +302,16 @@ def save_plan(plan_id):
         if mat.strip() and mat.strip().lower() not in existing_materials:
             materials_repo.create({'nome': mat.strip()})
             existing_materials.add(mat.strip().lower())
+
+    # Get equipment from form
+    equipamentos = request.form.getlist('equipamentos[]')
+
+    # Save new equipment for future autocomplete
+    existing_equipment = {e['nome'].lower() for e in equipment_repo.get_all()}
+    for eq in equipamentos:
+        if eq.strip() and eq.strip().lower() not in existing_equipment:
+            equipment_repo.create({'nome': eq.strip()})
+            existing_equipment.add(eq.strip().lower())
     
     # Get external services from form
     servicos_tipos = request.form.getlist('servico_tipo[]')
@@ -331,6 +341,7 @@ def save_plan(plan_id):
         'servicos_externos': servicos_externos,
         'materiais': materiais,
         'ferramentas': ferramentas,
+        'equipamentos': equipamentos,
         'cor_iluminacao': request.form.get('cor_iluminacao', '#ffffff'),
         'informacoes_importantes': request.form.get('informacoes_importantes', '').strip(),
     }

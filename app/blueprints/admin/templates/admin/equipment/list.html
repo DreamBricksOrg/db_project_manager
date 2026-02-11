@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Equipamentos - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Equipamentos</h1>
+    <a href="{{ url_for('admin.new_equipment') }}" class="btn btn-primary">+ Novo Equipamento</a>
+</div>
+
+<div class="card">
+    {% if equipment %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eq in equipment %}
+                <tr>
+                    <td data-label="Nome">{{ eq.nome }}</td>
+                    <td class="table-actions" data-label="Ações">
+                        <a href="{{ url_for('admin.edit_equipment', id=eq.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_equipment', id=eq.id) }}"
+                            style="display: inline;"
+                            data-confirm="Tem certeza que deseja remover este equipamento?">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum equipamento cadastrado</h3>
+        <p>Clique em "Novo Equipamento" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+
+<a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Voltar</a>
+{% endblock %}

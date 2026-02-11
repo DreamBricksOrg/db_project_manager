@@ -112,10 +112,30 @@ def graphic_specs(id):
         data = {
             'project_id': id,
             'cor_envelopamento': request.form.get('cor_envelopamento', ''),
-            'previsao_chegada_cor': parse_date_br(request.form.get('previsao_chegada_cor', '')),
-            'arquivos_impressao': request.form.get('arquivos_impressao', ''), # or file upload?
-            'previsao_chegada_arq': parse_date_br(request.form.get('previsao_chegada_arq', '')),
+            'cor_hex': request.form.get('cor_hex', '#000000'),
+            'previsao_chegada_cor': request.form.get('previsao_chegada_cor', ''),
+            'previsao_chegada_arq': request.form.get('previsao_chegada_arq', ''),
         }
+        
+        # Handle file uploads for print files
+        existing_files = specs.get('arquivos_impressao', []) if specs else []
+        if not isinstance(existing_files, list):
+            existing_files = []
+        
+        if 'arquivos_impressao' in request.files:
+            files = request.files.getlist('arquivos_impressao')
+            for f in files:
+                if f and allowed_file(f.filename):
+                    fname = secure_filename(f"gfx_{id}_{f.filename}")
+                    f.save(os.path.join(current_app.config['UPLOAD_DIR'], fname))
+                    existing_files.append(fname)
+        
+        data['arquivos_impressao'] = existing_files
+        
+        # Handle file removal
+        remove_files = request.form.getlist('remove_file')
+        if remove_files:
+            data['arquivos_impressao'] = [f for f in data['arquivos_impressao'] if f not in remove_files]
         
         if specs:
             graphics_repo.update(specs['id'], data)
@@ -125,10 +145,13 @@ def graphic_specs(id):
         flash('Especificações gráficas salvas.', 'success')
         return redirect(url_for('projects.graphic_specs', id=id))
     
-    # Format dates
+    # Format dates for display
     if specs:
-        specs['previsao_chegada_cor'] = format_date_br(specs.get('previsao_chegada_cor', ''))
-        specs['previsao_chegada_arq'] = format_date_br(specs.get('previsao_chegada_arq', ''))
+        specs['previsao_chegada_cor'] = specs.get('previsao_chegada_cor', '')
+        specs['previsao_chegada_arq'] = specs.get('previsao_chegada_arq', '')
+        # Ensure arquivos_impressao is a list
+        if not isinstance(specs.get('arquivos_impressao'), list):
+            specs['arquivos_impressao'] = []
         
     return render_template('projects/graphics_form.html', project=project, specs=specs or {})
 

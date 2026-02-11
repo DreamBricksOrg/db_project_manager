@@ -153,6 +153,23 @@
     {% endif %}
 </div>
 
+<!-- Equipment -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">⚙️ Equipamentos</h2>
+    </div>
+    {% set equipment = plan.equipamentos if plan.equipamentos else [] %}
+    {% if equipment %}
+    <div class="tag-list">
+        {% for eq in equipment %}
+        <div class="tag">{{ eq }}</div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #64748b;">Nenhum equipamento listado</p>
+    {% endif %}
+</div>
+
 <!-- Lighting -->
 {% if plan.cor_iluminacao %}
 <div class="card">
