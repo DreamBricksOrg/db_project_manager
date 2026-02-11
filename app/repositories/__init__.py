@@ -5,6 +5,9 @@ from app.repositories.mongo_repository import MongoRepository
 # User repository
 users_repo = MongoRepository('users')
 
+# Client repository
+clients_repo = MongoRepository('clients')
+
 # Contact repository
 contacts_repo = MongoRepository('contacts')
 

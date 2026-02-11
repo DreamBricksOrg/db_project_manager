@@ -7,7 +7,7 @@ from app.blueprints.auth.routes import login_required
 from app.repositories import (
     contacts_repo, producers_repo, installers_repo, 
     services_repo, materials_repo, plans_repo,
-    tools_repo
+    tools_repo, clients_repo
 )
 
 
@@ -31,8 +31,16 @@ AUTOCOMPLETE_TEMPLATE = '''
 def autocomplete_clients():
     query = request.args.get('q', '').lower()
     target = request.args.get('target', 'cliente')
-    clients = plans_repo.get_unique_values('cliente')
-    items = [{'value': c, 'label': c} for c in clients if query in c.lower()][:10]
+    
+    # Use Clients Repository
+    clients = clients_repo.get_all()
+    items = [{'value': c['nome'], 'label': c['nome']} for c in clients if query in c['nome'].lower()][:10]
+    
+    # Fallback to existing unique values if repo empty (optional transition strategy)
+    if not items:
+        legacy_clients = plans_repo.get_unique_values('cliente')
+        items = [{'value': c, 'label': c} for c in legacy_clients if query in c.lower()][:10]
+        
     return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input=target)
 
 

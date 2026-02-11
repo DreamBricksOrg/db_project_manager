@@ -142,6 +142,19 @@ def new_plan():
     return render_template('plans/form.html', plan=plan_data, **context)
 
 
+
+def hex_to_rgb(hex_color):
+    """Convert hex string (e.g., #ffffff) to rgb string (e.g., 255, 255, 255)"""
+    if not hex_color or not hex_color.startswith('#'):
+        return ''
+    h = hex_color.lstrip('#')
+    try:
+        rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+        return f"{rgb[0]}, {rgb[1]}, {rgb[2]}"
+    except ValueError:
+        return ''
+
+
 @plans_bp.route('/<id>')
 @login_required
 def view_plan(id):
@@ -155,6 +168,9 @@ def view_plan(id):
     plan['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
     plan['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
     plan['fim_veiculacao'] = format_date_br(plan.get('fim_veiculacao', ''))
+
+    # Calculate RGB for lighting
+    plan['rgb_iluminacao'] = hex_to_rgb(plan.get('cor_iluminacao', ''))
 
     # Get installer names
     all_installers = {i['id']: i for i in installers_repo.get_all()}

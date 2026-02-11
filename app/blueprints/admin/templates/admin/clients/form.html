@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if client %}Editar Cliente{% else %}Novo Cliente{% endif %} - OOH Manager
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if client %}Editar Cliente{% else %}Novo Cliente{% endif %}</h1>
+</div>
+
+<div class="card">
+    <form method="POST">
+        <div class="form-group">
+            <label class="form-label" for="nome">Nome *</label>
+            <input type="text" id="nome" name="nome" class="form-input" 
+                   value="{{ client.nome if client else '' }}" required autofocus>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-input" 
+                   value="{{ client.email if client else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="telefone">Telefone</label>
+            <input type="tel" id="telefone" name="telefone" class="form-input mask-phone" 
+                   value="{{ client.telefone if client else '' }}" placeholder="(00) 00000-0000">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="documento">CPF / CNPJ</label>
+            <input type="text" id="documento" name="documento" class="form-input" 
+                   value="{{ client.documento if client else '' }}">
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a href="{{ url_for('admin.list_clients') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

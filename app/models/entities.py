@@ -27,6 +27,16 @@ class Contact:
 
 
 @dataclass
+class Client:
+    id: str
+    nome: str
+    email: str
+    telefone: str
+    documento: str = '' # CPF/CNPJ
+
+
+
+@dataclass
 class Producer:
     id: str
     nome: str

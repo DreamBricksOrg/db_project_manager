@@ -4,13 +4,77 @@ from flask import render_template, redirect, url_for, request, flash
 
 from app.blueprints.admin import admin_bp
 from app.blueprints.auth.routes import admin_required
-from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo
+from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo
 
 
 @admin_bp.route('/')
 @admin_required
 def dashboard():
     return render_template('admin/dashboard.html')
+
+
+# ============ CLIENTS ============
+@admin_bp.route('/clients')
+@admin_required
+def list_clients():
+    clients = clients_repo.get_all()
+    return render_template('admin/clients/list.html', clients=clients)
+
+
+@admin_bp.route('/clients/new', methods=['GET', 'POST'])
+@admin_required
+def new_client():
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('telefone', '').strip(),
+            'documento': request.form.get('documento', '').strip()
+        }
+        
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+            return render_template('admin/clients/form.html', client=None)
+            
+        clients_repo.create(data)
+        flash('Cliente criado com sucesso!', 'success')
+        return redirect(url_for('admin.list_clients'))
+    
+    return render_template('admin/clients/form.html', client=None)
+
+
+@admin_bp.route('/clients/<id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_client(id):
+    client = clients_repo.get_by_id(id)
+    if not client:
+        flash('Cliente não encontrado.', 'error')
+        return redirect(url_for('admin.list_clients'))
+        
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('telefone', '').strip(),
+            'documento': request.form.get('documento', '').strip()
+        }
+        
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            clients_repo.update(id, data)
+            flash('Cliente atualizado!', 'success')
+            return redirect(url_for('admin.list_clients'))
+    
+    return render_template('admin/clients/form.html', client=client)
+
+
+@admin_bp.route('/clients/<id>/delete', methods=['POST'])
+@admin_required
+def delete_client(id):
+    clients_repo.delete(id)
+    flash('Cliente removido.', 'success')
+    return redirect(url_for('admin.list_clients'))
 
 
 # ============ CONTACTS ============

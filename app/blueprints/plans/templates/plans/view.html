@@ -136,6 +136,49 @@
     {% endif %}
 </div>
 
+<!-- Tools -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🛠️ Ferramentas Necessárias</h2>
+    </div>
+    {% set tools = plan.ferramentas if plan.ferramentas else [] %}
+    {% if tools %}
+    <div class="tag-list">
+        {% for tool in tools %}
+        <div class="tag">{{ tool }}</div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #64748b;">Nenhuma ferramenta listada</p>
+    {% endif %}
+</div>
+
+<!-- Lighting -->
+{% if plan.cor_iluminacao %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">💡 Iluminação</h2>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; padding: 10px;">
+        <div style="
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            background-color: {{ plan.cor_iluminacao }};
+            box-shadow: 0 0 20px {{ plan.cor_iluminacao }};
+            border: 2px solid #fff;
+        "></div>
+        <div>
+            <strong style="display: block; margin-bottom: 4px;">Cor Selecionada</strong>
+            <span style="font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;" title="Hex">{{ plan.cor_iluminacao }}</span>
+            {% if plan.rgb_iluminacao %}
+            <span style="font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;" title="RGB">RGB({{ plan.rgb_iluminacao }})</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Notes -->
 {% if plan.informacoes_importantes %}
 <div class="card">

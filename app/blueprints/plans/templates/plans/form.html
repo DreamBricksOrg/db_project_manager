@@ -129,17 +129,6 @@
             <h2 class="card-title">Equipe de Instalação</h2>
         </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                 <label class="form-label">Equipe DB</label>
-                 <textarea name="equipe_db" class="form-input" rows="2" placeholder="Nomes dos produtores DB">{{ plan.equipe_db if plan else '' }}</textarea>
-            </div>
-            <div class="col-md-6 mb-3">
-                 <label class="form-label">Equipe Externa</label>
-                 <textarea name="equipe_externa" class="form-input" rows="2" placeholder="Nomes da equipe externa">{{ plan.equipe_externa if plan else '' }}</textarea>
-            </div>
-        </div>
-
         <div class="form-group autocomplete-wrapper">
             <label class="form-label" for="installer_input">Adicionar Instalador (Cadastrado)</label>
             <div style="display: flex; gap: 8px;">
@@ -160,11 +149,6 @@
             </div>
             {% endfor %}
         </div>
-        {% if session.get('role') == 'admin' %}
-        <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">
-            <a href="{{ url_for('admin.list_installers') }}">Gerenciar instaladores</a>
-        </p>
-        {% endif %}
     </div>
 
     <!-- External Services -->

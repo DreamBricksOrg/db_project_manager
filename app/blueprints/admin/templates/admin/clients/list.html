@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Clientes</h1>
+    <a href="{{ url_for('admin.new_client') }}" class="btn btn-primary">+ Novo Cliente</a>
+</div>
+
+<div class="card">
+    {% if clients %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>CPF/CNPJ</th>
+                    <th style="width: 150px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr>
+                    <td data-label="Nome">{{ client.nome }}</td>
+                    <td data-label="Email">{{ client.email }}</td>
+                    <td data-label="Telefone">{{ client.telefone }}</td>
+                    <td data-label="Documento">{{ client.documento }}</td>
+                    <td class="table-actions" data-label="Ações">
+                        <a href="{{ url_for('admin.edit_client', id=client.id) }}"
+                            class="btn btn-sm btn-secondary">Editar</a>
+                        <form method="POST" action="{{ url_for('admin.delete_client', id=client.id) }}"
+                            style="display: inline;"
+                            onsubmit="return confirm('Tem certeza que deseja remover este cliente?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum cliente cadastrado</h3>
+        <p>Clique em "Novo Cliente" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Voltar</a>
+</div>
+{% endblock %}
