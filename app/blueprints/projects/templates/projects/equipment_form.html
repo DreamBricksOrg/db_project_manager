@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Equipamentos: {{ project.nome }}</h2>
+        <a href="{{ url_for('projects.view_project', id=project.id) }}" class="btn btn-secondary">Voltar</a>
+    </div>
+
+    <form method="POST">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Lista de Equipamentos</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItem()">+ Adicionar Item</button>
+            </div>
+            <div class="card-body" id="items-container">
+                {% if equipment and equipment.itens %}
+                    {% for item in equipment.itens %}
+                    <div class="input-group mb-2">
+                        <input type="text" name="itens[]" class="form-control" value="{{ item }}" placeholder="Ex: Modem 01">
+                        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Empty state or first item -->
+                     <div class="input-group mb-2">
+                        <input type="text" name="itens[]" class="form-control" placeholder="Ex: DB01">
+                        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Salvar Equipamentos</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addItem() {
+        const container = document.getElementById('items-container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" name="itens[]" class="form-control" placeholder="Novo Item">
+            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">x</button>
+        `;
+        container.appendChild(div);
+    }
+</script>
+{% endblock %}

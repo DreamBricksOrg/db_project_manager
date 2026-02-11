@@ -1,0 +1,57 @@
+- Projeto
+Nome do Projeto
+Cliente
+Produtor DB – Contato
+Produtor Externo – Contato
+Data de instalação 
+Data de Remoção 
+Data de Veiculação
+Datas parciais
+Endereço
+Descrição do projeto
+Imagem de Referência cliente
+Layout Montado pelo Rafa
+Adicionar imagens do projeto
+Link dos arquivos no drive
+Status
+Porcentagem de conclusão
+
+
+- Plano de instalação
+Nome do Projeto
+Cliente
+Produtor DB – Contato
+Produtor Externo – Contato
+Data de instalação 
+Data de Remoção 
+Data de Veiculação
+Datas parciais
+Endereço
+Descrição do projeto
+Cor de iluminação
+Imagem de Referência
+Equipe de DB
+Equipe Externa
+Materiais Principais
+Ferramentas
+
+- Pagina Gráfica:
+
+Cor envelopamento do projeto (caso n tenha poder inserir data de previsão de chegada)
+Arquivos impressão do projeto (caso n tenha poder inserir data de previsão de chegada)
+
+- Pagina De Equipamentos
+
+Exemplo:
+Db01
+Modem 01
+Tablet 03
+
+
+Projeto 1 - N Ferramentas
+Projeto 1 - N Materiais
+Projeto 1 - 1 Plano de Instalação
+Projeto 1 - 1 Gráfica
+
+Projeto 1 - N Instaladores
+Projeto 1 - 1 Produtor

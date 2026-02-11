@@ -22,6 +22,9 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(plans_bp, url_prefix='/plans')
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    from app.blueprints.projects import projects_bp
+    app.register_blueprint(projects_bp, url_prefix='/projects')
 
     # Root redirect
     @app.route('/')

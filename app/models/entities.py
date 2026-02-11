@@ -63,6 +63,46 @@ class Tool:
 
 
 @dataclass
+class Project:
+    id: str
+    nome: str
+    cliente: str
+    produtor_db: str = ''
+    produtor_db_contato: str = ''
+    produtor_ext: str = ''
+    produtor_ext_contato: str = ''
+    data_instalacao: str = ''
+    data_remocao: str = ''
+    inicio_veiculacao: str = ''
+    fim_veiculacao: str = ''
+    datas_parciais: list[str] = field(default_factory=list) # List of date strings
+    endereco: str = ''
+    descricao: str = ''
+    imagem_referencia: str = ''
+    layout_rafa: str = ''
+    galeria: list[str] = field(default_factory=list) # List of filenames
+    link_drive: str = ''
+    status: str = 'Em Andamento' 
+    conclusao: int = 0
+    # Virtual fields
+    plano_id: str = ''
+
+@dataclass
+class GraphicSpecs:
+    id: str
+    project_id: str
+    cor_envelopamento: str = ''
+    previsao_chegada_cor: str = ''
+    arquivos_impressao: str = ''
+    previsao_chegada_arq: str = ''
+
+@dataclass
+class Equipment:
+    id: str
+    project_id: str
+    itens: list[str] = field(default_factory=list)
+
+@dataclass
 class InstallationPlan:
     id: str
     # Basic info
@@ -82,6 +122,8 @@ class InstallationPlan:
     descricao: str
     # Team
     instaladores: list[str] = field(default_factory=list)  # List of installer IDs
+    equipe_db: str = '' # Names or description
+    equipe_externa: str = '' # Names or description
     # External services
     servicos_externos: list[dict] = field(default_factory=list)  # [{tipo, responsavel}]
     # Materials
@@ -92,5 +134,8 @@ class InstallationPlan:
     cor_iluminacao: str = '#ffffff'  # Default white
     # Notes
     informacoes_importantes: str = ''
-    # Layout photo filename
+    # Media
     foto_layout: str = ''
+    imagem_referencia: str = ''
+    # Relationships
+    project_id: str = ''

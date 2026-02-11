@@ -109,9 +109,37 @@ def new_plan():
     if request.method == 'POST':
         return save_plan(None)
     
+    plan_data = None
+    project_id = request.args.get('project_id')
+    
+    if project_id:
+        from app.repositories import projects_repo # Import here to avoid circular dependency if any
+        project = projects_repo.get_by_id(project_id)
+        if project:
+            # Pre-fill plan with project data
+            plan_data = {
+                'project_id': project_id,
+                'nome_projeto': project.get('nome', ''),
+                'cliente': project.get('cliente', ''),
+                'produtor_responsavel': project.get('produtor_db', ''),
+                'telefone_contato': project.get('produtor_db_contato', ''), # Pre-fill with DB Producer Phone
+                'endereco': project.get('endereco', ''),
+                'descricao': project.get('descricao', ''),
+                # Dates (Project uses ISO YYYY-MM-DD, Plan Form uses ISO for type="date")
+                'data_instalacao': project.get('data_instalacao', ''),
+                'data_remocao': project.get('data_remocao', ''),
+                'inicio_veiculacao': project.get('inicio_veiculacao', ''),
+                'fim_veiculacao': project.get('fim_veiculacao', ''),
+                # Project images can be carried over?
+                'imagem_referencia': project.get('imagem_referencia', ''),
+                'foto_layout': project.get('layout_rafa', '') # Assuming layout_rafa corresponds to foto_layout
+            }
+            # Add flash message to inform user
+            flash('Dados pré-preenchidos a partir do Projeto.', 'info')
+
     # Load data for autocomplete
     context = get_form_context()
-    return render_template('plans/form.html', plan=None, **context)
+    return render_template('plans/form.html', plan=plan_data, **context)
 
 
 @plans_bp.route('/<id>')
@@ -122,7 +150,7 @@ def view_plan(id):
         flash('Plano não encontrado.', 'error')
         return redirect(url_for('plans.list_plans'))
 
-    # Format dates for view
+    # Format dates for view (View uses convert to BR for display)
     plan['data_instalacao'] = format_date_br(plan.get('data_instalacao', ''))
     plan['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
     plan['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
@@ -189,9 +217,6 @@ def export_pdf(id):
     return redirect(url_for('plans.view_plan', id=id))
 
 
-
-
-
 @plans_bp.route('/<id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_plan(id):
@@ -203,11 +228,8 @@ def edit_plan(id):
     if request.method == 'POST':
         return save_plan(id)
 
-    # Format dates for form edit
-    plan['data_instalacao'] = format_date_br(plan.get('data_instalacao', ''))
-    plan['data_remocao'] = format_date_br(plan.get('data_remocao', ''))
-    plan['inicio_veiculacao'] = format_date_br(plan.get('inicio_veiculacao', ''))
-    plan['fim_veiculacao'] = format_date_br(plan.get('fim_veiculacao', ''))
+    # Dates are ISO in DB, suitable for type="date" inputs
+    # No formatting needed for edit form
 
     context = get_form_context()
     return render_template('plans/form.html', plan=plan, **context)
@@ -280,13 +302,16 @@ def save_plan(plan_id):
         'contato_cliente': request.form.get('contato_cliente', '').strip(),
         'telefone_contato': request.form.get('telefone_contato', '').strip(),
         'produtor_responsavel': request.form.get('produtor_responsavel', '').strip(),
-        'data_instalacao': parse_date_br(request.form.get('data_instalacao', '')),
-        'data_remocao': parse_date_br(request.form.get('data_remocao', '')),
-        'inicio_veiculacao': parse_date_br(request.form.get('inicio_veiculacao', '')),
-        'fim_veiculacao': parse_date_br(request.form.get('fim_veiculacao', '')),
+        # Use simple get for dates as they come in standard ISO format from type="date"
+        'data_instalacao': request.form.get('data_instalacao', ''),
+        'data_remocao': request.form.get('data_remocao', ''),
+        'inicio_veiculacao': request.form.get('inicio_veiculacao', ''),
+        'fim_veiculacao': request.form.get('fim_veiculacao', ''),
         'endereco': request.form.get('endereco', '').strip(),
         'descricao': request.form.get('descricao', '').strip(),
         'instaladores': request.form.getlist('instaladores'),
+        'equipe_db': request.form.get('equipe_db', '').strip(),
+        'equipe_externa': request.form.get('equipe_externa', '').strip(),
         'servicos_externos': servicos_externos,
         'materiais': materiais,
         'ferramentas': ferramentas,
@@ -294,32 +319,47 @@ def save_plan(plan_id):
         'informacoes_importantes': request.form.get('informacoes_importantes', '').strip(),
     }
     
+    # Preserve existing filepaths if not updated
+    if plan_id:
+        existing = plans_repo.get_by_id(plan_id)
+        if existing:
+            data['foto_layout'] = existing.get('foto_layout', '')
+            data['imagem_referencia'] = existing.get('imagem_referencia', '')
+            data['project_id'] = existing.get('project_id', '')
+
+    # Handle New Project ID from URL or Form if creating
+    if not plan_id:
+        if request.form.get('project_id'):
+            data['project_id'] = request.form.get('project_id')
+        elif request.args.get('project_id'):
+            data['project_id'] = request.args.get('project_id')
+
     if not data['nome_projeto']:
         flash('Nome do projeto é obrigatório.', 'error')
-        # Format dates back to BR for the form
-        data_to_form = data.copy()
-        data_to_form['data_instalacao'] = format_date_br(data['data_instalacao'])
-        data_to_form['data_remocao'] = format_date_br(data['data_remocao'])
-        data_to_form['inicio_veiculacao'] = format_date_br(data['inicio_veiculacao'])
-        data_to_form['fim_veiculacao'] = format_date_br(data['fim_veiculacao'])
+        # Return data as is (ISO format) for form repopulation
         
         context = get_form_context()
-        return render_template('plans/form.html', plan=data_to_form if not plan_id else {**plans_repo.get_by_id(plan_id), **data_to_form}, **context)
+        return render_template('plans/form.html', plan=data if not plan_id else {**plans_repo.get_by_id(plan_id), **data}, **context)
     
-    # Handle file upload
+    # Handle file uploads
+    # Foto Layout
     if 'foto_layout' in request.files:
         file = request.files['foto_layout']
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(f"layout_{plan_id or 'new'}_{file.filename}")
-            filepath = current_app.config['UPLOAD_DIR'] / filename
+            filepath = os.path.join(current_app.config['UPLOAD_DIR'], filename)
             file.save(filepath)
             data['foto_layout'] = filename
+            
+    # Imagem Referencia
+    if 'imagem_referencia' in request.files:
+        file = request.files['imagem_referencia']
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(f"ref_{plan_id or 'new'}_{file.filename}")
+            filepath = os.path.join(current_app.config['UPLOAD_DIR'], filename)
+            file.save(filepath)
+            data['imagem_referencia'] = filename
     
-    # Keep existing photo if not uploading new one
-    if plan_id and 'foto_layout' not in data:
-        existing = plans_repo.get_by_id(plan_id)
-        if existing:
-            data['foto_layout'] = existing.get('foto_layout', '')
     
     if plan_id:
         plans_repo.update(plan_id, data)
@@ -328,4 +368,8 @@ def save_plan(plan_id):
         plans_repo.create(data)
         flash('Plano criado com sucesso!', 'success')
     
+    # Redirect back to Project if linked
+    if data.get('project_id'):
+        return redirect(url_for('projects.view_project', id=data['project_id']))
+        
     return redirect(url_for('plans.list_plans'))

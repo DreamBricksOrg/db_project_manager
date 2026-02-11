@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'Editar' if project.id else 'Novo' }} Projeto</h1>
+    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary">Cancelar</a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" id="projectForm">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Básicas</h2>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Nome do Projeto *</label>
+            <input type="text" name="nome" class="form-input" value="{{ project.nome }}" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label">Cliente</label>
+                <input type="text" name="cliente" id="cliente" class="form-input" value="{{ project.cliente }}"
+                       hx-get="{{ url_for('api.autocomplete_clients', target='cliente') }}" hx-trigger="keyup changed delay:300ms"
+                       hx-target="#cliente-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="cliente-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label">Endereço</label>
+                <input type="text" id="endereco" name="endereco" class="form-input" value="{{ project.endereco }}"
+                    placeholder="Rua, número, bairro, cidade - Estado" autocomplete="off">
+                <div id="address-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Descrição</label>
+            <textarea name="descricao" class="form-input" rows="3">{{ project.descricao }}</textarea>
+        </div>
+    </div>
+
+    <!-- Team -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Equipe e Contatos</h2>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label">Produtor DB</label>
+                <input type="text" name="produtor_db" id="produtor_db" class="form-input" value="{{ project.produtor_db }}"
+                       hx-get="{{ url_for('api.autocomplete_producers', target='produtor_db') }}" hx-trigger="keyup changed delay:300ms"
+                       hx-target="#produtor-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="produtor-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Contato Produtor DB</label>
+                <input type="text" name="produtor_db_contato" id="produtor_db_contato" class="form-input mask-phone" value="{{ project.produtor_db_contato }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label">Produtor Externo</label>
+                <input type="text" name="produtor_ext" id="produtor_ext" class="form-input" value="{{ project.produtor_ext }}"
+                       hx-get="{{ url_for('api.autocomplete_contacts', target='produtor_ext') }}" hx-trigger="keyup changed delay:300ms"
+                       hx-target="#produtor-ext-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <div id="produtor-ext-results" class="autocomplete-results" style="display: none;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Contato Produtor Externo</label>
+                <input type="text" name="produtor_ext_contato" id="produtor_ext_contato" class="form-input mask-phone" value="{{ project.produtor_ext_contato }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Dates -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Datas Principais</h2>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Instalação</label>
+                <input type="date" name="data_instalacao" id="data_instalacao" class="form-input" value="{{ project.data_instalacao }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Remoção</label>
+                <input type="date" name="data_remocao" id="data_remocao" class="form-input" value="{{ project.data_remocao }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Início Veiculação</label>
+                <input type="date" name="inicio_veiculacao" class="form-input" value="{{ project.inicio_veiculacao }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fim Veiculação</label>
+                <input type="date" name="fim_veiculacao" class="form-input" value="{{ project.fim_veiculacao }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label d-flex justify-content-between">
+                <span>Datas Parciais / Detalhes</span>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="addDateRow()">+ Adicionar Data</button>
+            </label>
+            <div id="datas-container" class="dynamic-list">
+                {% for item in project.datas_parciais %}
+                <div class="dynamic-list-item">
+                    <input type="date" name="datas_parciais_data[]" class="form-input" value="{{ item.data }}" style="max-width: 160px;">
+                    <input type="text" name="datas_parciais_desc[]" class="form-input" value="{{ item.descricao }}" placeholder="Descrição (ex: Vistoria)">
+                    <button class="btn btn-sm btn-danger ms-2" type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Files & Media -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Arquivos e Mídia</h2>
+        </div>
+
+        <div class="card mb-3 bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Imagem de Referência (Cliente)</h6>
+                <div class="d-flex align-items-center gap-3">
+                    {% if project.imagem_referencia %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.imagem_referencia) }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <input type="file" name="imagem_referencia" class="form-input mb-0" accept="image/*">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Layout Montado (Rafa)</h6>
+                <div class="d-flex align-items-center gap-3">
+                    {% if project.layout_rafa %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.layout_rafa) }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <input type="file" name="layout_rafa" class="form-input mb-0" accept="image/*">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Galeria de Imagens</h6>
+                <div class="mb-2">
+                    <input type="file" name="galeria" class="form-input mb-0" multiple accept="image/*">
+                    <small class="text-muted">Selecione múltiplas imagens para adicionar à galeria.</small>
+                </div>
+                {% if project.galeria %}
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for img in project.galeria %}
+                    <img src="{{ url_for('static', filename='uploads/' + img) }}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Status e Progresso</h2>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group w-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Progresso do Projeto</label>
+                    <span id="status-display" class="badge bg-secondary">Não Iniciado</span>
+                </div>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <input type="range" id="conclusao-slider" name="conclusao" class="form-range flex-grow-1" 
+                           min="0" max="100" value="{{ project.conclusao }}">
+                    <span class="fw-bold fs-5 text-primary" style="min-width: 3.5rem; text-align: right;">
+                        <span id="conclusao-val">{{ project.conclusao }}</span>%
+                    </span>
+                </div>
+                <input type="hidden" name="status" id="status-input" value="{{ project.status }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">Salvar Projeto</button>
+        
+        {% if project.id %}
+        <a href="{{ url_for('projects.view_plan_redirect', id=project.id) }}" class="btn btn-success btn-lg shadow-sm" title="Criar ou Visualizar Plano de Instalação">
+            <i class="fas fa-file-invoice"></i> Plano de Instalação {{ 'Existente' if plan else '(Novo)' }}
+        </a>
+        {% endif %}
+    </div>
+</form>
+
+<script>
+    // --- Autocomplete Logic ---
+    function selectAutocomplete(element, targetId, value) {
+        const input = document.getElementById(targetId);
+        if (input) {
+            input.value = value;
+            
+            // If selecting a producer/contact, try to fetch phone if related input exists
+            if (targetId === 'produtor_db') {
+                 fetchPhone(value, 'produtor_db_contato');
+            } else if (targetId === 'produtor_ext') {
+                 fetchPhone(value, 'produtor_ext_contato');
+            }
+        }
+        // Hide results
+        element.parentElement.style.display = 'none';
+        // Clear global
+        document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+    }
+
+    function fetchPhone(name, targetInputId) {
+        fetch(`{{ url_for('api.get_contact_phone') }}?nome=${encodeURIComponent(name)}`)
+            .then(r => r.text())
+            .then(phone => {
+                const arr = document.getElementsByName(targetInputId); // Try by name if ID missing, or use ID
+                const el = document.getElementById(targetInputId) || (arr.length ? arr[0] : null);
+                if (el && phone) {
+                    el.value = phone;
+                }
+            });
+    }
+
+    // --- Dynamic Dates ---
+    function addDateRow() {
+        const container = document.getElementById('datas-container');
+        const div = document.createElement('div');
+        div.className = 'dynamic-list-item';
+        div.innerHTML = `
+            <input type="date" name="datas_parciais_data[]" class="form-input" style="max-width: 160px;">
+            <input type="text" name="datas_parciais_desc[]" class="form-input" placeholder="Descrição (ex: Vistoria)">
+            <button class="btn btn-sm btn-danger ms-2" type="button" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // --- Status Logic ---
+    const slider = document.getElementById('conclusao-slider');
+    const valDisplay = document.getElementById('conclusao-val');
+    const statusDisplay = document.getElementById('status-display');
+    const statusInput = document.getElementById('status-input');
+    const installInput = document.getElementById('data_instalacao');
+    const removeInput = document.getElementById('data_remocao');
+
+    function updateStatus() {
+        if (!slider) return;
+        const val = parseInt(slider.value);
+        valDisplay.textContent = val;
+        
+        let status = 'Não Iniciado';
+        let badgeClass = 'bg-secondary';
+
+        // 1. Slider Logic
+        if (val === 0) {
+            status = 'Não Iniciado';
+            badgeClass = 'bg-secondary';
+        } else if (val > 0 && val < 80) {
+            status = 'Em Andamento';
+            badgeClass = 'bg-warning text-dark';
+        } else if (val >= 80 && val < 100) {
+            status = 'Testes';
+            badgeClass = 'bg-info text-dark';
+        } else if (val === 100) {
+            status = 'Concluído';
+            badgeClass = 'bg-success';
+        }
+
+        // 2. Date Override Logic
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const installDate = installInput.value ? new Date(installInput.value) : null;
+        const removeDate = removeInput.value ? new Date(removeInput.value) : null;
+
+        if (installInput.value && removeInput.value) {
+             // Reset comparison times
+            if (installDate) installDate.setHours(0,0,0,0);
+            if (removeDate) removeDate.setHours(0,0,0,0);
+
+            if (installDate && removeDate) {
+                if (today >= installDate && today < removeDate) {
+                    status = 'Instalado';
+                    badgeClass = 'bg-primary';
+                }
+                if (today >= removeDate) {
+                    status = 'Concluído';
+                    badgeClass = 'bg-success';
+                }
+            }
+        }
+
+        // Update UI
+        statusDisplay.textContent = status;
+        statusDisplay.className = `badge ${badgeClass}`;
+        statusInput.value = status;
+    }
+
+    if (slider) {
+        slider.addEventListener('input', updateStatus);
+        installInput.addEventListener('change', updateStatus);
+        removeInput.addEventListener('change', updateStatus);
+        // Initial check
+        updateStatus();
+    }
+
+    // --- Address Autocomplete (Brazil) ---
+    const addressInput = document.getElementById('endereco');
+    const addressResults = document.getElementById('address-results');
+    let addressTimeout = null;
+
+    if (addressInput) {
+        addressInput.addEventListener('input', function () {
+            clearTimeout(addressTimeout);
+            const query = this.value;
+
+            if (query.length < 3) {
+                addressResults.style.display = 'none';
+                return;
+            }
+
+            addressTimeout = setTimeout(() => {
+                // Modified URL for Brazil limit
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=br`)
+                    .then(response => response.json())
+                    .then(data => {
+                        addressResults.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                 const div = document.createElement('div');
+                                div.className = 'autocomplete-item';
+                                div.textContent = item.display_name;
+                                div.onclick = function () {
+                                    addressInput.value = item.display_name;
+                                    addressResults.style.display = 'none';
+                                };
+                                addressResults.appendChild(div);
+                            });
+                            addressResults.style.display = 'block';
+                        } else {
+                            addressResults.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Error fetching address:', err));
+            }, 500);
+        });
+    }
+
+    // --- Global Autocomplete Handling ---
+    document.addEventListener('htmx:afterSwap', function (evt) {
+        if (evt.detail.target.classList.contains('autocomplete-results')) {
+            evt.detail.target.style.display = 'block';
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+        }
+    });
+</script>
+{% endblock %}

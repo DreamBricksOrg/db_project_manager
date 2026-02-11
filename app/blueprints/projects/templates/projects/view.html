@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ project.nome }}</h2>
+        <div>
+            <a href="{{ url_for('projects.edit_project', id=project.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Editar Projeto
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">Visão Geral</div>
+                <div class="card-body">
+                    <p><strong>Cliente:</strong> {{ project.cliente }}</p>
+                    <p><strong>Descrição:</strong> {{ project.descricao }}</p>
+                    <p><strong>Endereço:</strong> {{ project.endereco }}</p>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Produtor DB</h6>
+                            <p>{{ project.produtor_db }} ({{ project.produtor_db_contato }})</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Produtor Externo</h6>
+                            <p>{{ project.produtor_ext }} ({{ project.produtor_ext_contato }})</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">Referência do Cliente</div>
+                        <div class="card-body text-center">
+                            {% if project.imagem_referencia %}
+                            <img src="{{ url_for('static', filename='uploads/' + project.imagem_referencia) }}" class="img-fluid rounded" style="max-height: 200px;">
+                            {% else %}
+                            <p class="text-muted">Sem imagem</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">Layout Rafa</div>
+                        <div class="card-body text-center">
+                            {% if project.layout_rafa %}
+                            <img src="{{ url_for('static', filename='uploads/' + project.layout_rafa) }}" class="img-fluid rounded" style="max-height: 200px;">
+                            {% else %}
+                            <p class="text-muted">Sem layout</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if project.galeria %}
+            <div class="card mb-4">
+                <div class="card-header">Galeria</div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for img in project.galeria %}
+                        <div class="col-md-3 mb-3">
+                            <img src="{{ url_for('static', filename='uploads/' + img) }}" class="img-fluid rounded shadow-sm">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Sidebar / Meta -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Status</div>
+                <div class="card-body">
+                    <h3 class="text-center mb-3">{{ project.conclusao }}%</h3>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" style="width: {{ project.conclusao }}%"></div>
+                    </div>
+                    <div class="text-center">
+                        <span class="badge bg-primary">{{ project.status }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Datas</div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><strong>Instalação:</strong> {{ project.data_instalacao }}</li>
+                        <li><strong>Remoção:</strong> {{ project.data_remocao }}</li>
+                        <li><strong>Veiculação:</strong> {{ project.data_veiculacao }}</li>
+                    </ul>
+                    {% if project.datas_parciais %}
+                    <h6>Parciais:</h6>
+                    <ul>
+                        {% for data in project.datas_parciais %}
+                        <li>{{ data }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if project.link_drive %}
+            <div class="d-grid mb-4">
+                <a href="{{ project.link_drive }}" target="_blank" class="btn btn-outline-dark">
+                    <i class="fab fa-google-drive"></i> Acessar Drive
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

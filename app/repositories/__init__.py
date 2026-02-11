@@ -26,3 +26,12 @@ plans_repo = MongoRepository('plans')
 # Tool repository
 tools_repo = MongoRepository('tools')
 
+# Project repository
+projects_repo = MongoRepository('projects')
+
+# Graphic specs repository
+graphics_repo = MongoRepository('graphics')
+
+# Equipment repository
+equipment_repo = MongoRepository('equipment')
+

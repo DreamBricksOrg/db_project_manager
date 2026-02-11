@@ -30,21 +30,23 @@ AUTOCOMPLETE_TEMPLATE = '''
 @login_required
 def autocomplete_clients():
     query = request.args.get('q', '').lower()
+    target = request.args.get('target', 'cliente')
     clients = plans_repo.get_unique_values('cliente')
     items = [{'value': c, 'label': c} for c in clients if query in c.lower()][:10]
-    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='cliente')
+    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input=target)
 
 
 @api_bp.route('/autocomplete/contacts')
 @login_required
 def autocomplete_contacts():
     query = request.args.get('q', '').lower()
+    target = request.args.get('target', 'contato_cliente')
     contacts = contacts_repo.get_all()
     items = [
         {'value': c['nome'], 'label': f"{c['nome']} - {c['telefone']}"}
         for c in contacts if query in c['nome'].lower()
     ][:10]
-    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='contato_cliente')
+    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input=target)
 
 
 @api_bp.route('/autocomplete/contacts/phone')
@@ -52,10 +54,19 @@ def autocomplete_contacts():
 def get_contact_phone():
     """Return phone when a contact is selected"""
     nome = request.args.get('nome', '')
+    
+    # Check Contacts
     contacts = contacts_repo.get_all()
     contact = next((c for c in contacts if c['nome'] == nome), None)
     if contact:
         return contact.get('telefone', '')
+        
+    # Check Producers
+    producers = producers_repo.get_all()
+    producer = next((p for p in producers if p['nome'] == nome), None)
+    if producer:
+        return producer.get('telefone', '')
+        
     return ''
 
 
@@ -63,12 +74,13 @@ def get_contact_phone():
 @login_required
 def autocomplete_producers():
     query = request.args.get('q', '').lower()
+    target = request.args.get('target', 'produtor_responsavel')
     producers = producers_repo.get_all()
     items = [
         {'value': p['nome'], 'label': p['nome']}
         for p in producers if query in p['nome'].lower()
     ][:10]
-    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input='produtor_responsavel')
+    return render_template_string(AUTOCOMPLETE_TEMPLATE, items=items, target_input=target)
 
 
 @api_bp.route('/autocomplete/materials')

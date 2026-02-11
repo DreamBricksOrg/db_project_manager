@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Especificações Gráficas: {{ project.nome }}</h2>
+        <a href="{{ url_for('projects.view_project', id=project.id) }}" class="btn btn-secondary">Voltar</a>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">Envelopamento</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Cor do Envelopamento</label>
+                            <input type="text" name="cor_envelopamento" class="form-control" value="{{ specs.cor_envelopamento }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Previsão de Chegada (Cor)</label>
+                            <input type="text" name="previsao_chegada_cor" class="form-control date-mask" value="{{ specs.previsao_chegada_cor }}" placeholder="dd/mm/aaaa">
+                            <small class="text-muted">Preencher caso não tenha a cor definida ainda.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">Arquivos de Impressão</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Link ou Descrição dos Arquivos</label>
+                            <textarea name="arquivos_impressao" class="form-control" rows="3">{{ specs.arquivos_impressao }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Previsão de Chegada (Arquivos)</label>
+                            <input type="text" name="previsao_chegada_arq" class="form-control date-mask" value="{{ specs.previsao_chegada_arq }}" placeholder="dd/mm/aaaa">
+                             <small class="text-muted">Preencher caso não tenha os arquivos ainda.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Salvar Gráfica</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

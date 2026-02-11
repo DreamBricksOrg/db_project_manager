@@ -8,6 +8,9 @@
 </div>
 
 <form method="POST" enctype="multipart/form-data">
+    {% if plan and plan.project_id %}
+    <input type="hidden" name="project_id" value="{{ plan.project_id }}">
+    {% endif %}
     <!-- Basic Info -->
     <div class="card">
         <div class="card-header">
@@ -42,16 +45,16 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label" for="telefone_contato">Telefone Contato</label>
+                <label class="form-label" for="telefone_contato">Telefone Contato DB</label>
                 <input type="tel" id="telefone_contato" name="telefone_contato" class="form-input mask-phone"
                     value="{{ plan.telefone_contato if plan else '' }}" placeholder="(11) 99999-9999">
             </div>
 
             <div class="form-group autocomplete-wrapper">
-                <label class="form-label" for="produtor_responsavel">Produtor Responsável</label>
+                <label class="form-label" for="produtor_responsavel">Produtor Responsável DB</label>
                 <input type="text" id="produtor_responsavel" name="produtor_responsavel" class="form-input"
                     value="{{ plan.produtor_responsavel if plan else '' }}"
-                    hx-get="{{ url_for('api.autocomplete_producers') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-get="{{ url_for('api.autocomplete_producers', target='produtor_responsavel') }}" hx-trigger="keyup changed delay:300ms"
                     hx-target="#produtor-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
                 <div id="produtor-results" class="autocomplete-results" style="display: none;"></div>
             </div>
@@ -126,8 +129,19 @@
             <h2 class="card-title">Equipe de Instalação</h2>
         </div>
 
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                 <label class="form-label">Equipe DB</label>
+                 <textarea name="equipe_db" class="form-input" rows="2" placeholder="Nomes dos produtores DB">{{ plan.equipe_db if plan else '' }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+                 <label class="form-label">Equipe Externa</label>
+                 <textarea name="equipe_externa" class="form-input" rows="2" placeholder="Nomes da equipe externa">{{ plan.equipe_externa if plan else '' }}</textarea>
+            </div>
+        </div>
+
         <div class="form-group autocomplete-wrapper">
-            <label class="form-label" for="installer_input">Adicionar Instalador</label>
+            <label class="form-label" for="installer_input">Adicionar Instalador (Cadastrado)</label>
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="installer_input" class="form-input" placeholder="Digite o nome do instalador"
                     hx-get="{{ url_for('api.autocomplete_installers') }}" hx-trigger="keyup changed delay:300ms"
@@ -258,6 +272,7 @@
                 <span id="color-code" style="font-family: monospace; color: #64748b;">{{ plan.cor_iluminacao if plan and plan.cor_iluminacao else '#ffffff' }}</span>
             </div>
         </div>
+    </div>
 
     <!-- Notes -->
     <div class="card">
@@ -279,20 +294,39 @@
 
         {% if plan and plan.foto_layout %}
         <div style="margin-bottom: 16px;">
+            <label class="form-label">Foto do Layout</label>
             <img src="{{ url_for('static', filename='uploads/' + plan.foto_layout) }}" alt="Layout atual"
                 class="image-preview">
             <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">Imagem atual. Faça upload para substituir.
             </p>
         </div>
         {% endif %}
+        
+        {% if plan and plan.imagem_referencia %}
+        <div style="margin-bottom: 16px;">
+            <label class="form-label">Imagem de Referência</label>
+            <img src="{{ url_for('static', filename='uploads/' + plan.imagem_referencia) }}" alt="Ref atual"
+                class="image-preview">
+        </div>
+        {% endif %}
 
-        <label class="image-upload" for="foto_layout">
-            <input type="file" id="foto_layout" name="foto_layout" accept="image/*" onchange="previewImage(this)">
+        <label class="image-upload mb-4" for="foto_layout">
+            <input type="file" id="foto_layout" name="foto_layout" accept="image/*" onchange="previewImage(this, 'image-preview-layout')">
             <div>
-                <p style="font-size: 1.1rem; margin-bottom: 4px;">📷 Clique ou arraste para fazer upload</p>
+                <p style="font-size: 1.1rem; margin-bottom: 4px;">📷 Layout: Clique ou arraste</p>
                 <p style="color: #64748b; font-size: 0.9rem;">PNG, JPG, GIF até 16MB</p>
             </div>
         </label>
+        <img id="image-preview-layout" class="image-preview" style="display: none;">
+
+        <label class="image-upload" for="imagem_referencia">
+            <input type="file" id="imagem_referencia" name="imagem_referencia" accept="image/*" onchange="previewImage(this, 'image-preview-ref')">
+            <div>
+                <p style="font-size: 1.1rem; margin-bottom: 4px;">🖼️ Referência: Clique ou arraste</p>
+                <p style="color: #64748b; font-size: 0.9rem;">PNG, JPG, GIF até 16MB</p>
+            </div>
+        </label>
+        <img id="image-preview-ref" class="image-preview" style="display: none;">
         <img id="image-preview" class="image-preview" style="display: none;">
     </div>
 
@@ -300,7 +334,6 @@
         <button type="submit" class="btn btn-primary">Salvar Plano</button>
         <a href="{{ url_for('plans.list_plans') }}" class="btn btn-secondary">Cancelar</a>
     </div>
-</form>
 {% endblock %}
 
 {% block scripts %}
@@ -328,8 +361,8 @@
         if (input) {
             input.value = value;
 
-            // If selecting a contact, fetch the phone
-            if (targetInput === 'contato_cliente') {
+            // If selecting a Producer, fetch the phone
+            if (targetInput === 'produtor_responsavel') {
                 fetch(`{{ url_for('api.get_contact_phone') }}?nome=${encodeURIComponent(value)}`)
                     .then(r => r.text())
                     .then(phone => {
@@ -467,8 +500,8 @@
     });
 
     // Image preview
-    function previewImage(input) {
-        const preview = document.getElementById('image-preview');
+    function previewImage(input, targetId) {
+        const preview = document.getElementById(targetId || 'image-preview');
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function (e) {
