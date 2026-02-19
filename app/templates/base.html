@@ -195,6 +195,50 @@
         });
         document.addEventListener('htmx:afterSwap', initMasks);
     </script>
+    <!-- Image Lightbox -->
+    <div id="imageLightbox" class="lightbox">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <div class="lightbox-content">
+            <img id="lightboxImage" src="" alt="Imagem ampliada">
+            <div id="lightboxCaption"></div>
+        </div>
+    </div>
+
+    <script>
+        // ... (existing scripts) ...
+
+        // Lightbox Logic
+        function openLightbox(imageSrc, caption) {
+            const lightbox = document.getElementById('imageLightbox');
+            const img = document.getElementById('lightboxImage');
+            const cap = document.getElementById('lightboxCaption');
+            
+            img.src = imageSrc;
+            cap.textContent = caption || '';
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('imageLightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close on click outside
+        document.getElementById('imageLightbox').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLightbox();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('imageLightbox').classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 

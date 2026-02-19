@@ -403,6 +403,30 @@ def delete_service(id):
     return redirect(url_for('admin.list_services'))
 
 
+# ============ HELPER FUNCTIONS for UPLOADS ============
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from flask import current_app
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_image(file):
+    if file and allowed_file(file.filename):
+        original_filename = secure_filename(file.filename)
+        extension = original_filename.rsplit('.', 1)[1].lower()
+        new_filename = f"{uuid.uuid4().hex}.{extension}"
+        
+        upload_folder = current_app.config['UPLOAD_DIR']
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        file.save(os.path.join(upload_folder, new_filename))
+        return f"uploads/{new_filename}"
+    return None
+
 # ============ MATERIALS ============
 @admin_bp.route('/materials')
 @admin_required
@@ -418,6 +442,11 @@ def new_material():
         data = {
             'nome': request.form.get('nome', '').strip()
         }
+        
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
+
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:
@@ -439,6 +468,11 @@ def edit_material(id):
         data = {
             'nome': request.form.get('nome', '').strip()
         }
+        
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
+            
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:
@@ -474,6 +508,10 @@ def new_tool():
             'nome': request.form.get('nome', '').strip()
         }
         
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
+        
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
             return render_template('admin/tools/form.html', tool=None)
@@ -497,6 +535,10 @@ def edit_tool(id):
         data = {
             'nome': request.form.get('nome', '').strip()
         }
+        
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
         
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
@@ -532,6 +574,11 @@ def new_equipment():
         data = {
             'nome': request.form.get('nome', '').strip()
         }
+        
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
+
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:
@@ -553,6 +600,11 @@ def edit_equipment(id):
         data = {
             'nome': request.form.get('nome', '').strip()
         }
+        
+        image_path = save_image(request.files.get('image'))
+        if image_path:
+            data['image'] = image_path
+
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:

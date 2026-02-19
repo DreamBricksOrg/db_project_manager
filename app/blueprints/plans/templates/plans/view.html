@@ -128,7 +128,16 @@
     {% if materials %}
     <div class="tag-list">
         {% for material in materials %}
-        <div class="tag">{{ material }}</div>
+            {% set mat_obj = materials_map.get(material) %}
+            {% if mat_obj and mat_obj.image %}
+            <div class="tag" 
+                 style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                 onclick="openLightbox('{{ url_for('static', filename=mat_obj.image) }}', '{{ material }}')">
+                {{ material }} 📷
+            </div>
+            {% else %}
+            <div class="tag">{{ material }}</div>
+            {% endif %}
         {% endfor %}
     </div>
     {% else %}
@@ -145,7 +154,16 @@
     {% if tools %}
     <div class="tag-list">
         {% for tool in tools %}
-        <div class="tag">{{ tool }}</div>
+            {% set tool_obj = tools_map.get(tool) %}
+            {% if tool_obj and tool_obj.image %}
+            <div class="tag" 
+                 style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                 onclick="openLightbox('{{ url_for('static', filename=tool_obj.image) }}', '{{ tool }}')">
+                {{ tool }} 📷
+            </div>
+            {% else %}
+            <div class="tag">{{ tool }}</div>
+            {% endif %}
         {% endfor %}
     </div>
     {% else %}
@@ -162,7 +180,16 @@
     {% if equipment %}
     <div class="tag-list">
         {% for eq in equipment %}
-        <div class="tag">{{ eq }}</div>
+            {% set eq_obj = equipment_map.get(eq) %}
+            {% if eq_obj and eq_obj.image %}
+            <div class="tag" 
+                 style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                 onclick="openLightbox('{{ url_for('static', filename=eq_obj.image) }}', '{{ eq }}')">
+                {{ eq }} 📷
+            </div>
+            {% else %}
+            <div class="tag">{{ eq }}</div>
+            {% endif %}
         {% endfor %}
     </div>
     {% else %}

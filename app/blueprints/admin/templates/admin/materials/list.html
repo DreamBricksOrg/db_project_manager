@@ -14,6 +14,7 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Imagem</th>
                     <th>Nome</th>
                     <th>Ações</th>
                 </tr>
@@ -21,7 +22,22 @@
             <tbody>
                 {% for material in materials %}
                 <tr>
-                    <td data-label="Nome">{{ material.nome }}</td>
+                    <td data-label="Imagem">
+                        {% if material.image %}
+                        <img src="{{ url_for('static', filename=material.image) }}" alt="{{ material.nome }}" 
+                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                             onclick="openLightbox('{{ url_for('static', filename=material.image) }}', '{{ material.nome }}')">
+                        {% else %}
+                        <div style="width: 40px; height: 40px; background: #eee; border-radius: 4px;"></div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Nome" 
+                        {% if material.image %}
+                        style="cursor: pointer; color: var(--color-teal); font-weight: 500;"
+                        onclick="openLightbox('{{ url_for('static', filename=material.image) }}', '{{ material.nome }}')"
+                        {% endif %}>
+                        {{ material.nome }}
+                    </td>
                     <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_material', id=material.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>

@@ -8,11 +8,21 @@
 </div>
 
 <div class="card">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label class="form-label" for="nome">Nome *</label>
             <input type="text" id="nome" name="nome" class="form-input" value="{{ equipment.nome if equipment else '' }}"
                 required placeholder="Ex: Modem, Roteador, Câmera, Display LED">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="image">Imagem</label>
+            <input type="file" id="image" name="image" class="form-input" accept="image/*">
+            {% if equipment and equipment.image %}
+            <div style="margin-top: 10px;">
+                <img src="{{ url_for('static', filename=equipment.image) }}" alt="Imagem atual" style="max-height: 150px; border-radius: 8px;">
+            </div>
+            {% endif %}
         </div>
 
         <div class="btn-group">

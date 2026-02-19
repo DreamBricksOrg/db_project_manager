@@ -181,7 +181,19 @@ def view_plan(id):
             if inst_id in all_installers:
                 installer_names.append(all_installers[inst_id])
 
-    return render_template('plans/view.html', plan=plan, installer_names=installer_names)
+    # Create lookup maps for resources (to get images)
+    materials_map = {m['nome']: m for m in materials_repo.get_all()}
+    tools_map = {t['nome']: t for t in tools_repo.get_all()}
+    equipment_map = {e['nome']: e for e in equipment_repo.get_all()}
+
+    return render_template(
+        'plans/view.html', 
+        plan=plan, 
+        installer_names=installer_names,
+        materials_map=materials_map,
+        tools_map=tools_map,
+        equipment_map=equipment_map
+    )
 
 
 @plans_bp.route('/<id>/pdf')

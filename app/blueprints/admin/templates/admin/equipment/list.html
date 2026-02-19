@@ -14,6 +14,7 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Imagem</th>
                     <th>Nome</th>
                     <th>Ações</th>
                 </tr>
@@ -21,7 +22,22 @@
             <tbody>
                 {% for eq in equipment %}
                 <tr>
-                    <td data-label="Nome">{{ eq.nome }}</td>
+                    <td data-label="Imagem">
+                        {% if eq.image %}
+                        <img src="{{ url_for('static', filename=eq.image) }}" alt="{{ eq.nome }}" 
+                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                             onclick="openLightbox('{{ url_for('static', filename=eq.image) }}', '{{ eq.nome }}')">
+                        {% else %}
+                        <div style="width: 40px; height: 40px; background: #eee; border-radius: 4px;"></div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Nome" 
+                        {% if eq.image %}
+                        style="cursor: pointer; color: var(--color-teal); font-weight: 500;"
+                        onclick="openLightbox('{{ url_for('static', filename=eq.image) }}', '{{ eq.nome }}')"
+                        {% endif %}>
+                        {{ eq.nome }}
+                    </td>
                     <td class="table-actions" data-label="Ações">
                         <a href="{{ url_for('admin.edit_equipment', id=eq.id) }}"
                             class="btn btn-sm btn-secondary">Editar</a>
