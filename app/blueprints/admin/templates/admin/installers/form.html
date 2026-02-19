@@ -42,22 +42,7 @@
             </div>
         </div>
 
-        <h3 class="section-title">🔐 Credenciais de Acesso</h3>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="username">Usuário</label>
-                <input type="text" id="username" name="username" class="form-input"
-                    value="{{ installer.username if installer else '' }}" placeholder="Login para acessar o sistema">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="password">Senha {{ '(deixe em branco para manter)' if installer else ''
-                    }}</label>
-                <input type="password" id="password" name="password" class="form-input"
-                    placeholder="{{ '••••••••' if installer else 'Senha de acesso' }}">
-            </div>
-        </div>
 
         <div class="btn-group">
             <button type="submit" class="btn btn-primary">Salvar</button>

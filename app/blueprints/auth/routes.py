@@ -56,30 +56,6 @@ def find_user_for_login(username: str, password: str):
             'tipo': 'admin'
         }
     
-    # Check producers
-    producers = producers_repo.get_all()
-    producer = next((p for p in producers if p.get('username') == username and p.get('password') == password), None)
-    if producer:
-        return {
-            'id': producer['id'],
-            'username': producer['username'],
-            'nome': producer.get('nome', producer['username']),
-            'role': 'user',
-            'tipo': 'produtor'
-        }
-    
-    # Check installers
-    installers = installers_repo.get_all()
-    installer = next((i for i in installers if i.get('username') == username and i.get('password') == password), None)
-    if installer:
-        return {
-            'id': installer['id'],
-            'username': installer['username'],
-            'nome': installer.get('nome', installer['username']),
-            'role': 'user',
-            'tipo': 'instalador'
-        }
-    
     return None
 
 

@@ -4,13 +4,101 @@ from flask import render_template, redirect, url_for, request, flash
 
 from app.blueprints.admin import admin_bp
 from app.blueprints.auth.routes import admin_required
-from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo
+from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo, users_repo
 
 
 @admin_bp.route('/')
 @admin_required
 def dashboard():
     return render_template('admin/dashboard.html')
+
+
+# ============ USERS ============
+@admin_bp.route('/users')
+@admin_required
+def list_users():
+    users = users_repo.get_all()
+    # Sort by name
+    users.sort(key=lambda x: x.get('nome', '').lower())
+    return render_template('admin/users/list.html', users=users)
+
+
+@admin_bp.route('/users/new', methods=['GET', 'POST'])
+@admin_required
+def new_user():
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'password': request.form.get('password', '').strip(),
+            'role': request.form.get('role', 'user'),
+            'active': request.form.get('active') == 'true'
+        }
+        
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            # Check if username exists (only if provided)
+            if data['username']:
+                existing = next((u for u in users_repo.get_all() if u.get('username') == data['username']), None)
+                if existing:
+                    flash('Nome de usuário já existe.', 'error')
+                    return render_template('admin/users/form.html', user=None)
+
+            users_repo.create(data)
+            flash('Usuário criado com sucesso!', 'success')
+            return redirect(url_for('admin.list_users'))
+    
+    return render_template('admin/users/form.html', user=None)
+
+
+@admin_bp.route('/users/<id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_user(id):
+    user = users_repo.get_by_id(id)
+    if not user:
+        flash('Usuário não encontrado.', 'error')
+        return redirect(url_for('admin.list_users'))
+        
+    if request.method == 'POST':
+        data = {
+            'nome': request.form.get('nome', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'role': request.form.get('role', 'user'),
+            'active': request.form.get('active') == 'true'
+        }
+        
+        password = request.form.get('password', '').strip()
+        if password:
+            data['password'] = password
+            
+        if not data['nome']:
+            flash('Nome é obrigatório.', 'error')
+        else:
+            # Check if username exists (if changed and provided)
+            if data['username'] and data['username'] != user.get('username'):
+                existing = next((u for u in users_repo.get_all() if u.get('username') == data['username']), None)
+                if existing:
+                    flash('Nome de usuário já existe.', 'error')
+                    return render_template('admin/users/form.html', user=user)
+
+            users_repo.update(id, data)
+            flash('Usuário atualizado!', 'success')
+            return redirect(url_for('admin.list_users'))
+    
+    return render_template('admin/users/form.html', user=user)
+
+
+@admin_bp.route('/users/<id>/delete', methods=['POST'])
+@admin_required
+def delete_user(id):
+    user = users_repo.get_by_id(id)
+    if user and user.get('username') == 'admin':
+        flash('Não é possível excluir o administrador principal.', 'error')
+    else:
+        users_repo.delete(id)
+        flash('Usuário removido.', 'success')
+    return redirect(url_for('admin.list_users'))
 
 
 # ============ CLIENTS ============
@@ -143,6 +231,7 @@ def list_producers():
     return render_template('admin/producers/list.html', producers=producers)
 
 
+
 @admin_bp.route('/producers/new', methods=['GET', 'POST'])
 @admin_required
 def new_producer():
@@ -150,9 +239,7 @@ def new_producer():
         data = {
             'nome': request.form.get('nome', '').strip(),
             'telefone': request.form.get('telefone', '').strip(),
-            'email': request.form.get('email', '').strip(),
-            'username': request.form.get('username', '').strip(),
-            'password': request.form.get('password', '').strip()
+            'email': request.form.get('email', '').strip()
         }
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
@@ -161,6 +248,7 @@ def new_producer():
             flash('Produtor criado com sucesso!', 'success')
             return redirect(url_for('admin.list_producers'))
     return render_template('admin/producers/form.html', producer=None)
+
 
 
 @admin_bp.route('/producers/<id>/edit', methods=['GET', 'POST'])
@@ -175,13 +263,9 @@ def edit_producer(id):
         data = {
             'nome': request.form.get('nome', '').strip(),
             'telefone': request.form.get('telefone', '').strip(),
-            'email': request.form.get('email', '').strip(),
-            'username': request.form.get('username', '').strip(),
-            'password': request.form.get('password', '').strip()
+            'email': request.form.get('email', '').strip()
         }
-        # Keep old password if not provided
-        if not data['password']:
-            data['password'] = producer.get('password', '')
+
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:
@@ -208,6 +292,7 @@ def list_installers():
     return render_template('admin/installers/list.html', installers=installers)
 
 
+
 @admin_bp.route('/installers/new', methods=['GET', 'POST'])
 @admin_required
 def new_installer():
@@ -216,9 +301,7 @@ def new_installer():
             'nome': request.form.get('nome', '').strip(),
             'telefone': request.form.get('telefone', '').strip(),
             'email': request.form.get('email', '').strip(),
-            'especialidade': request.form.get('especialidade', '').strip(),
-            'username': request.form.get('username', '').strip(),
-            'password': request.form.get('password', '').strip()
+            'especialidade': request.form.get('especialidade', '').strip()
         }
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
@@ -227,6 +310,7 @@ def new_installer():
             flash('Instalador criado com sucesso!', 'success')
             return redirect(url_for('admin.list_installers'))
     return render_template('admin/installers/form.html', installer=None)
+
 
 
 @admin_bp.route('/installers/<id>/edit', methods=['GET', 'POST'])
@@ -242,13 +326,9 @@ def edit_installer(id):
             'nome': request.form.get('nome', '').strip(),
             'telefone': request.form.get('telefone', '').strip(),
             'email': request.form.get('email', '').strip(),
-            'especialidade': request.form.get('especialidade', '').strip(),
-            'username': request.form.get('username', '').strip(),
-            'password': request.form.get('password', '').strip()
+            'especialidade': request.form.get('especialidade', '').strip()
         }
-        # Keep old password if not provided
-        if not data['password']:
-            data['password'] = installer.get('password', '')
+
         if not data['nome']:
             flash('Nome é obrigatório.', 'error')
         else:

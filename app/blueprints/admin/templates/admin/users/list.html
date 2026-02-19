@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Usuários</h1>
+    <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary">+ Novo Usuário</a>
+</div>
+
+<div class="card">
+    {% if users %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Usuário</th>
+                    <th>Perfil</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td data-label="Nome">{{ user.nome }}</td>
+                    <td data-label="Usuário">
+                        {{ user.username }}
+                        {% if not user.password %}
+                        <span title="Usuário sem senha definida" style="color:var(--color-warning); margin-left:4px; cursor:help;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;vertical-align:text-bottom;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                            </svg>
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Perfil">
+                        {% if user.role == 'admin' %}
+                            <span class="badge badge-error">Admin</span>
+                        {% elif user.role == 'producer' %}
+                            <span class="badge badge-info">Produtor</span>
+                        {% elif user.role == 'installer' %}
+                            <span class="badge badge-success">Instalador</span>
+                        {% else %}
+                            <span class="badge badge-warning">Usuário</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Status">
+                        {% if user.active %}
+                            <span class="badge badge-success">Ativo</span>
+                        {% else %}
+                            <span class="badge badge-error">Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-actions" data-label="Ações">
+                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-sm btn-secondary">Editar</a>
+                        {% if user.username != 'admin' %}
+                        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Nenhum usuário cadastrado</h3>
+        <p>Clique em "+ Novo Usuário" para adicionar o primeiro.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
