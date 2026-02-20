@@ -185,11 +185,43 @@ def list_plans():
             'days': days,
         })
 
-    # Format dates for display in the table below
+    # Sorting (must happen BEFORE date formatting to sort on ISO dates)
+    sort_by = request.args.get('sort_by', '')
+    sort_dir = request.args.get('sort_dir', 'asc')
+    
+    SORT_KEYS = {
+        'projeto': lambda p: (p.get('nome_projeto') or '').lower(),
+        'cliente': lambda p: (p.get('cliente') or '').lower(),
+        'data': lambda p: p.get('data_instalacao') or '',
+        'endereco': lambda p: (p.get('endereco') or '').lower(),
+    }
+    
+    if sort_by in SORT_KEYS:
+        filtered_plans.sort(key=SORT_KEYS[sort_by], reverse=(sort_dir == 'desc'))
+
+    # Format dates for display in the table (after sorting)
     for p in filtered_plans:
         raw = p.get('data_instalacao', '')
         if raw and '/' not in raw:
             p['data_instalacao'] = format_date_br(raw)
+
+    # Pagination
+    ALLOWED_PER_PAGE = [10, 25, 50]
+    try:
+        per_page = int(request.args.get('per_page', 10))
+    except (ValueError, TypeError):
+        per_page = 10
+    if per_page not in ALLOWED_PER_PAGE:
+        per_page = 10
+    
+    total_items = len(filtered_plans)
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    paginated_plans = filtered_plans[(page - 1) * per_page : page * per_page]
 
     # Month names for template
     month_names = {
@@ -199,7 +231,7 @@ def list_plans():
     }
 
     return render_template('plans/list.html', 
-                         plans=filtered_plans,
+                         plans=paginated_plans,
                          gantt_rows=gantt_rows,
                          gantt_month=gantt_month,
                          gantt_year=gantt_year,
@@ -208,6 +240,12 @@ def list_plans():
                          month_names=month_names,
                          status_filter=status_filter,
                          status_options=list(STATUS_COLORS.keys()),
+                         page=page,
+                         total_pages=total_pages,
+                         total_items=total_items,
+                         per_page=per_page,
+                         sort_by=sort_by,
+                         sort_dir=sort_dir,
                          q=q, 
                          start_date=start_date, 
                          end_date=end_date)

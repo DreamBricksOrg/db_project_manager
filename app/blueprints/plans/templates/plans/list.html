@@ -130,10 +130,28 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Projeto</th>
-                <th>Cliente</th>
-                <th>Data Instalação</th>
-                <th>Endereço</th>
+                {% set base_params = {'q': q, 'start_date': start_date, 'end_date': end_date, 'gantt_month': gantt_month, 'gantt_year': gantt_year, 'status': status_filter, 'per_page': per_page} %}
+                
+                <th class="sortable-th">
+                    <a href="{{ url_for('plans.list_plans', sort_by='projeto', sort_dir='desc' if sort_by == 'projeto' and sort_dir == 'asc' else 'asc', **base_params) }}" class="sort-link {% if sort_by == 'projeto' %}active{% endif %}">
+                        Projeto {% if sort_by == 'projeto' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th class="sortable-th">
+                    <a href="{{ url_for('plans.list_plans', sort_by='cliente', sort_dir='desc' if sort_by == 'cliente' and sort_dir == 'asc' else 'asc', **base_params) }}" class="sort-link {% if sort_by == 'cliente' %}active{% endif %}">
+                        Cliente {% if sort_by == 'cliente' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th class="sortable-th">
+                    <a href="{{ url_for('plans.list_plans', sort_by='data', sort_dir='desc' if sort_by == 'data' and sort_dir == 'asc' else 'asc', **base_params) }}" class="sort-link {% if sort_by == 'data' %}active{% endif %}">
+                        Data Instalação {% if sort_by == 'data' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th class="sortable-th">
+                    <a href="{{ url_for('plans.list_plans', sort_by='endereco', sort_dir='desc' if sort_by == 'endereco' and sort_dir == 'asc' else 'asc', **base_params) }}" class="sort-link {% if sort_by == 'endereco' %}active{% endif %}">
+                        Endereço {% if sort_by == 'endereco' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -165,6 +183,35 @@
             {% endfor %}
         </tbody>
     </table>
+    
+    <!-- Pagination -->
+    <div class="pagination-bar">
+        <div class="pagination-left">
+            <label class="page-info" for="perPageSelect">Exibindo</label>
+            <select id="perPageSelect" class="gantt-filter-select" onchange="window.location.href=this.value">
+                {% for pp in [10, 25, 50] %}
+                <option value="{{ url_for('plans.list_plans', per_page=pp, page=1, q=q, start_date=start_date, end_date=end_date, gantt_month=gantt_month, gantt_year=gantt_year, status=status_filter, sort_by=sort_by, sort_dir=sort_dir) }}" {{ 'selected' if per_page == pp }}>{{ pp }}</option>
+                {% endfor %}
+            </select>
+            <span class="page-info">de {{ total_items }} itens</span>
+        </div>
+        
+        <div class="pagination-right">
+            {% if page > 1 %}
+            <a href="{{ url_for('plans.list_plans', page=page-1, per_page=per_page, q=q, start_date=start_date, end_date=end_date, gantt_month=gantt_month, gantt_year=gantt_year, status=status_filter, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-sm btn-secondary">← Anterior</a>
+            {% else %}
+            <span class="btn btn-sm btn-secondary" style="opacity: 0.4; pointer-events: none;">← Anterior</span>
+            {% endif %}
+            
+            <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+            
+            {% if page < total_pages %}
+            <a href="{{ url_for('plans.list_plans', page=page+1, per_page=per_page, q=q, start_date=start_date, end_date=end_date, gantt_month=gantt_month, gantt_year=gantt_year, status=status_filter, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-sm btn-secondary">Próxima →</a>
+            {% else %}
+            <span class="btn btn-sm btn-secondary" style="opacity: 0.4; pointer-events: none;">Próxima →</span>
+            {% endif %}
+        </div>
+    </div>
     {% else %}
     <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"

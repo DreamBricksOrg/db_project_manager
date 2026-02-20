@@ -32,11 +32,74 @@ def parse_date_br(br_date):
 @projects_bp.route('/')
 @login_required
 def list_projects():
+    q = request.args.get('q', '').strip().lower()
+    status_filter = request.args.get('status', '')
+    
     projects = projects_repo.get_all()
-    # Format dates for list view
+    
+    # Filter
+    filtered = []
     for p in projects:
+        if status_filter and p.get('status', '') != status_filter:
+            continue
+        if q:
+            searchable = ' '.join([
+                p.get('nome', ''), p.get('cliente', ''),
+                p.get('endereco', ''), p.get('descricao', ''),
+            ]).lower()
+            if q not in searchable:
+                continue
+        filtered.append(p)
+    
+    # Sort (before date formatting)
+    sort_by = request.args.get('sort_by', '')
+    sort_dir = request.args.get('sort_dir', 'asc')
+    
+    SORT_KEYS = {
+        'nome': lambda p: (p.get('nome') or '').lower(),
+        'cliente': lambda p: (p.get('cliente') or '').lower(),
+        'data': lambda p: p.get('data_instalacao') or '',
+        'status': lambda p: (p.get('status') or '').lower(),
+    }
+    if sort_by in SORT_KEYS:
+        filtered.sort(key=SORT_KEYS[sort_by], reverse=(sort_dir == 'desc'))
+    
+    total_items = len(filtered)
+    
+    # Format dates for display
+    for p in filtered:
         p['data_instalacao'] = format_date_br(p.get('data_instalacao', ''))
-    return render_template('projects/list.html', projects=projects)
+    
+    # Pagination
+    ALLOWED_PER_PAGE = [12, 24, 48]
+    try:
+        per_page = int(request.args.get('per_page', 12))
+    except (ValueError, TypeError):
+        per_page = 12
+    if per_page not in ALLOWED_PER_PAGE:
+        per_page = 12
+    
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    paginated = filtered[(page - 1) * per_page : page * per_page]
+    
+    status_options = ['Não Iniciado', 'Em Andamento', 'Testes', 'Instalado', 'Concluído']
+    
+    return render_template('projects/list.html',
+                         projects=paginated,
+                         total_items=total_items,
+                         page=page,
+                         total_pages=total_pages,
+                         per_page=per_page,
+                         sort_by=sort_by,
+                         sort_dir=sort_dir,
+                         q=q,
+                         status_filter=status_filter,
+                         status_options=status_options)
 
 @projects_bp.route('/new', methods=['GET', 'POST'])
 @login_required

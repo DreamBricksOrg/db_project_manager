@@ -5,13 +5,47 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Projetos</h1>
-        <p class="text-slate small">{{ projects | length }} projeto{{ 's' if projects | length != 1 else '' }} cadastrado{{ 's' if projects | length != 1 else '' }}</p>
+        <p class="text-slate small">{{ total_items }} projeto{{ 's' if total_items != 1 else '' }} cadastrado{{ 's' if total_items != 1 else '' }}</p>
     </div>
     <a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         Novo Projeto
     </a>
 </div>
+
+<!-- Search & Filter Bar -->
+<form method="GET" action="{{ url_for('projects.list_projects') }}" class="filters-bar">
+    <input type="hidden" name="sort_by" value="{{ sort_by }}">
+    <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
+    <input type="hidden" name="per_page" value="{{ per_page }}">
+    
+    <div class="search-input-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nome, cliente, endereço...">
+    </div>
+    
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+        <option value="">Todos os Status</option>
+        {% for s in status_options %}
+        <option value="{{ s }}" {{ 'selected' if s == status_filter }}>{{ s }}</option>
+        {% endfor %}
+    </select>
+    
+    <select name="sort_by" class="filter-select" onchange="this.form.submit()">
+        <option value="">Ordenar por...</option>
+        <option value="nome" {{ 'selected' if sort_by == 'nome' }}>Nome</option>
+        <option value="cliente" {{ 'selected' if sort_by == 'cliente' }}>Cliente</option>
+        <option value="data" {{ 'selected' if sort_by == 'data' }}>Data</option>
+        <option value="status" {{ 'selected' if sort_by == 'status' }}>Status</option>
+    </select>
+    
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    {% if q or status_filter %}
+    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-secondary">Limpar</a>
+    {% endif %}
+</form>
 
 {% if projects %}
 <div class="projects-grid">
@@ -71,6 +105,37 @@
     </a>
     {% endfor %}
 </div>
+
+<!-- Pagination -->
+{% set base_params = {'q': q, 'status': status_filter, 'sort_by': sort_by, 'sort_dir': sort_dir} %}
+<div class="pagination-bar" style="margin-top: 24px;">
+    <div class="pagination-left">
+        <label class="page-info" for="projPerPage">Exibindo</label>
+        <select id="projPerPage" class="gantt-filter-select" onchange="window.location.href=this.value">
+            {% for pp in [12, 24, 48] %}
+            <option value="{{ url_for('projects.list_projects', per_page=pp, page=1, **base_params) }}" {{ 'selected' if per_page == pp }}>{{ pp }}</option>
+            {% endfor %}
+        </select>
+        <span class="page-info">de {{ total_items }} itens</span>
+    </div>
+    
+    <div class="pagination-right">
+        {% if page > 1 %}
+        <a href="{{ url_for('projects.list_projects', page=page-1, per_page=per_page, **base_params) }}" class="btn btn-sm btn-secondary">← Anterior</a>
+        {% else %}
+        <span class="btn btn-sm btn-secondary" style="opacity: 0.4; pointer-events: none;">← Anterior</span>
+        {% endif %}
+        
+        <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+        
+        {% if page < total_pages %}
+        <a href="{{ url_for('projects.list_projects', page=page+1, per_page=per_page, **base_params) }}" class="btn btn-sm btn-secondary">Próxima →</a>
+        {% else %}
+        <span class="btn btn-sm btn-secondary" style="opacity: 0.4; pointer-events: none;">Próxima →</span>
+        {% endif %}
+    </div>
+</div>
+
 {% else %}
 <div class="empty-state">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width:64px;height:64px;color:var(--color-slate);opacity:0.4;margin-bottom:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
