@@ -7,6 +7,40 @@ from app.blueprints.auth.routes import admin_required
 from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo, users_repo
 
 
+def paginate_list(items, search_fields=None):
+    """Shared pagination + search for admin lists."""
+    q = request.args.get('q', '').strip().lower()
+    
+    if q and search_fields:
+        items = [i for i in items if any(q in str(i.get(f, '')).lower() for f in search_fields)]
+    
+    total_items = len(items)
+    
+    ALLOWED = [10, 25, 50]
+    try:
+        per_page = int(request.args.get('per_page', 10))
+    except (ValueError, TypeError):
+        per_page = 10
+    if per_page not in ALLOWED:
+        per_page = 10
+    
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    
+    return {
+        'items': items[(page - 1) * per_page : page * per_page],
+        'page': page,
+        'total_pages': total_pages,
+        'total_items': total_items,
+        'per_page': per_page,
+        'q': q,
+    }
+
+
 @admin_bp.route('/')
 @admin_required
 def dashboard():
@@ -18,9 +52,9 @@ def dashboard():
 @admin_required
 def list_users():
     users = users_repo.get_all()
-    # Sort by name
     users.sort(key=lambda x: x.get('nome', '').lower())
-    return render_template('admin/users/list.html', users=users)
+    pg = paginate_list(users, search_fields=['nome', 'username'])
+    return render_template('admin/users/list.html', users=pg['items'], list_endpoint='admin.list_users', **pg)
 
 
 @admin_bp.route('/users/new', methods=['GET', 'POST'])
@@ -106,7 +140,8 @@ def delete_user(id):
 @admin_required
 def list_clients():
     clients = clients_repo.get_all()
-    return render_template('admin/clients/list.html', clients=clients)
+    pg = paginate_list(clients, search_fields=['nome', 'email', 'telefone'])
+    return render_template('admin/clients/list.html', clients=pg['items'], list_endpoint='admin.list_clients', **pg)
 
 
 @admin_bp.route('/clients/new', methods=['GET', 'POST'])
@@ -170,7 +205,8 @@ def delete_client(id):
 @admin_required
 def list_contacts():
     contacts = contacts_repo.get_all()
-    return render_template('admin/contacts/list.html', contacts=contacts)
+    pg = paginate_list(contacts, search_fields=['nome', 'email', 'telefone'])
+    return render_template('admin/contacts/list.html', contacts=pg['items'], list_endpoint='admin.list_contacts', **pg)
 
 
 @admin_bp.route('/contacts/new', methods=['GET', 'POST'])
@@ -228,7 +264,8 @@ def delete_contact(id):
 @admin_required
 def list_producers():
     producers = producers_repo.get_all()
-    return render_template('admin/producers/list.html', producers=producers)
+    pg = paginate_list(producers, search_fields=['nome', 'email', 'telefone'])
+    return render_template('admin/producers/list.html', producers=pg['items'], list_endpoint='admin.list_producers', **pg)
 
 
 
@@ -289,7 +326,8 @@ def delete_producer(id):
 @admin_required
 def list_installers():
     installers = installers_repo.get_all()
-    return render_template('admin/installers/list.html', installers=installers)
+    pg = paginate_list(installers, search_fields=['nome', 'email', 'especialidade'])
+    return render_template('admin/installers/list.html', installers=pg['items'], list_endpoint='admin.list_installers', **pg)
 
 
 
@@ -352,7 +390,8 @@ def delete_installer(id):
 @admin_required
 def list_services():
     services = services_repo.get_all()
-    return render_template('admin/services/list.html', services=services)
+    pg = paginate_list(services, search_fields=['tipo_servico', 'responsavel'])
+    return render_template('admin/services/list.html', services=pg['items'], list_endpoint='admin.list_services', **pg)
 
 
 @admin_bp.route('/services/new', methods=['GET', 'POST'])
@@ -432,7 +471,8 @@ def save_image(file):
 @admin_required
 def list_materials():
     materials = materials_repo.get_all()
-    return render_template('admin/materials/list.html', materials=materials)
+    pg = paginate_list(materials, search_fields=['nome'])
+    return render_template('admin/materials/list.html', materials=pg['items'], list_endpoint='admin.list_materials', **pg)
 
 
 @admin_bp.route('/materials/new', methods=['GET', 'POST'])
@@ -497,7 +537,8 @@ def delete_material(id):
 @admin_required
 def list_tools():
     tools = tools_repo.get_all()
-    return render_template('admin/tools/list.html', tools=tools)
+    pg = paginate_list(tools, search_fields=['nome'])
+    return render_template('admin/tools/list.html', tools=pg['items'], list_endpoint='admin.list_tools', **pg)
 
 
 @admin_bp.route('/tools/new', methods=['GET', 'POST'])
@@ -564,7 +605,8 @@ def delete_tool(id):
 @admin_required
 def list_equipment():
     equipment = equipment_repo.get_all()
-    return render_template('admin/equipment/list.html', equipment=equipment)
+    pg = paginate_list(equipment, search_fields=['nome'])
+    return render_template('admin/equipment/list.html', equipment=pg['items'], list_endpoint='admin.list_equipment', **pg)
 
 
 @admin_bp.route('/equipment/new', methods=['GET', 'POST'])

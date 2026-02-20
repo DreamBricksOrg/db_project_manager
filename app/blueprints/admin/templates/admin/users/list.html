@@ -6,6 +6,16 @@
     <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary">+ Novo Usuário</a>
 </div>
 
+<form method="GET" action="{{ url_for('admin.list_users') }}" class="filters-bar">
+    <input type="hidden" name="per_page" value="{{ per_page }}">
+    <div class="search-input-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nome, usuário...">
+    </div>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    {% if q %}<a href="{{ url_for('admin.list_users') }}" class="btn btn-secondary">Limpar</a>{% endif %}
+</form>
+
 <div class="card">
     {% if users %}
     <div class="table-container">
@@ -64,6 +74,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'admin/_pagination.html' %}
     {% else %}
     <div class="empty-state">
         <h3>Nenhum usuário cadastrado</h3>
