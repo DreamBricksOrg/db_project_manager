@@ -1580,3 +1580,147 @@ textarea.form-input {
     transform: scale(1.1);
     color: var(--color-cyan);
 }
+
+/* ============================================
+   GANTT TABLE
+   ============================================ */
+.gantt-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.gantt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 900px;
+}
+
+.gantt-table thead {
+    background: var(--color-dark);
+    color: white;
+}
+
+.gantt-table th {
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+}
+
+.gantt-table td {
+    padding: 6px 4px;
+    border: 1px solid var(--color-ice);
+    text-align: center;
+    vertical-align: middle;
+}
+
+.gantt-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.gantt-table tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.gantt-col-project {
+    text-align: left !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    min-width: 180px;
+    max-width: 220px;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: white;
+}
+
+thead .gantt-col-project {
+    background: var(--color-dark);
+    z-index: 3;
+}
+
+.gantt-col-weekday {
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 2px 4px !important;
+    color: var(--color-navy)
+}
+
+.gantt-weekend {
+    color: #fbbf24 !important;
+}
+
+.gantt-col-day {
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    height: 32px;
+    color: var(--color-navy)
+}
+
+.gantt-active {
+    border-radius: 0;
+    border-color: rgba(255,255,255,0.3) !important;
+}
+
+.gantt-project-link {
+    color: var(--color-dark);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.gantt-project-link:hover {
+    color: var(--color-teal);
+}
+
+/* Gantt Filters */
+.gantt-filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.gantt-filter-select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-ice);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--color-dark);
+    font-size: 0.85rem;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.gantt-filter-select:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+/* Legend */
+.gantt-legend {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-ice);
+    flex-wrap: wrap;
+}
+
+.gantt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--color-slate);
+}
+
+.gantt-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+}

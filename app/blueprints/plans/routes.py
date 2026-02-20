@@ -3,7 +3,8 @@
 import os
 import json
 import io
-from datetime import datetime
+import calendar
+from datetime import datetime, date
 from flask import render_template, redirect, url_for, request, flash, current_app, send_file
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
@@ -15,6 +16,26 @@ from app.repositories import (
     installers_repo, services_repo, materials_repo,
     tools_repo, equipment_repo
 )
+
+# Status colors for the Gantt chart
+STATUS_COLORS = {
+    'Não Iniciado': '#94a3b8',
+    'Em Andamento': '#e2f50b',
+    'Testes': '#3bd4f6',
+    'Instalado': '#9808e6',
+    'Concluído': '#11f018',
+}
+
+def get_plan_status(plan):
+    """Derive status from project data if not explicitly set."""
+    # Try to get from linked project
+    from app.repositories import projects_repo
+    project_id = plan.get('project_id')
+    if project_id:
+        project = projects_repo.get_by_id(project_id)
+        if project and project.get('status'):
+            return project['status']
+    return 'Em Andamento'
 
 
 def format_date_br(iso_date):
@@ -46,12 +67,34 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def parse_iso_date(s):
+    """Safely parse an ISO date string, return None on failure."""
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return None
+
+
 @plans_bp.route('/')
 @login_required
 def list_plans():
     q = request.args.get('q', '').strip().lower()
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
+    status_filter = request.args.get('status', '')
+    
+    # Gantt month/year filters (default to current)
+    today = date.today()
+    try:
+        gantt_month = int(request.args.get('gantt_month', today.month))
+        gantt_year = int(request.args.get('gantt_year', today.year))
+    except (ValueError, TypeError):
+        gantt_month = today.month
+        gantt_year = today.year
+    
+    days_in_month = calendar.monthrange(gantt_year, gantt_month)[1]
     
     plans = plans_repo.get_all()
     all_installers = {i['id']: i['nome'].lower() for i in installers_repo.get_all()}
@@ -75,29 +118,96 @@ def list_plans():
                 p.get('produtor_responsavel', ''),
                 p.get('endereco', ''),
             ]
-            
-            # Add materials to search
             if isinstance(p.get('materiais'), list):
                 searchable_text.extend(p['materiais'])
-                
-            # Add installer names to search
             if isinstance(p.get('instaladores'), list):
                 for inst_id in p['instaladores']:
                     if inst_id in all_installers:
                         searchable_text.append(all_installers[inst_id])
-            
-            # Check if query matches any field
             if not any(q in str(field).lower() for field in searchable_text):
                 continue
+        
+        # Status filter
+        p_status = get_plan_status(p)
+        p['_status'] = p_status
+        if status_filter and p_status != status_filter:
+            continue
                 
         filtered_plans.append(p)
 
-    # Format dates for display
+    # Build Gantt rows - only plans overlapping selected month
+    month_start = date(gantt_year, gantt_month, 1)
+    month_end = date(gantt_year, gantt_month, days_in_month)
+    
+    WEEKDAY_NAMES = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    
+    # Build weekday headers
+    weekdays = []
+    for day_num in range(1, days_in_month + 1):
+        d = date(gantt_year, gantt_month, day_num)
+        weekdays.append(WEEKDAY_NAMES[d.weekday()])
+    
+    gantt_rows = []
     for p in filtered_plans:
-        p['data_instalacao'] = format_date_br(p.get('data_instalacao', ''))
+        plan_start = parse_iso_date(p.get('data_instalacao', ''))
+        plan_end = parse_iso_date(p.get('data_remocao', '')) or parse_iso_date(p.get('fim_veiculacao', ''))
+        if not plan_end and plan_start:
+            plan_end = plan_start
         
+        # Only include if plan overlaps the selected month
+        if plan_start and plan_end:
+            if plan_end < month_start or plan_start > month_end:
+                continue
+        elif plan_start:
+            if plan_start < month_start or plan_start > month_end:
+                continue
+        else:
+            continue
+        
+        status = p.get('_status', 'Em Andamento')
+        color = STATUS_COLORS.get(status, '#3b82f6')
+        
+        days = []
+        for day_num in range(1, days_in_month + 1):
+            current_day = date(gantt_year, gantt_month, day_num)
+            active = False
+            if plan_start and plan_end:
+                active = plan_start <= current_day <= plan_end
+            elif plan_start:
+                active = current_day == plan_start
+            days.append({'day': day_num, 'active': active})
+        
+        gantt_rows.append({
+            'id': p.get('id'),
+            'project': p.get('nome_projeto', 'Sem Nome'),
+            'status': status,
+            'color': color,
+            'days': days,
+        })
+
+    # Format dates for display in the table below
+    for p in filtered_plans:
+        raw = p.get('data_instalacao', '')
+        if raw and '/' not in raw:
+            p['data_instalacao'] = format_date_br(raw)
+
+    # Month names for template
+    month_names = {
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+        5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+        9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+    }
+
     return render_template('plans/list.html', 
-                         plans=filtered_plans, 
+                         plans=filtered_plans,
+                         gantt_rows=gantt_rows,
+                         gantt_month=gantt_month,
+                         gantt_year=gantt_year,
+                         days_in_month=days_in_month,
+                         weekdays=weekdays,
+                         month_names=month_names,
+                         status_filter=status_filter,
+                         status_options=list(STATUS_COLORS.keys()),
                          q=q, 
                          start_date=start_date, 
                          end_date=end_date)
