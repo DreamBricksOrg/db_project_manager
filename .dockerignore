@@ -1,0 +1,39 @@
+# Version control
+.git
+.gitignore
+
+# Python artifacts
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.ruff_cache
+.mypy_cache
+.pytest_cache
+.venv
+venv
+env
+
+# IDE / Editor
+.vscode
+.idea
+.cursor*
+
+# Agent config (not needed in container)
+.agent
+
+# Local data (mounted as volumes)
+mongodb_data
+data
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+*.md
+*.txt
+!requirements.txt
+design-system
+layout.txt
