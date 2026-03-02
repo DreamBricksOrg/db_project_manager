@@ -106,9 +106,9 @@
                     {% endif %}
                 </div>
                 <div class="pv-image-card">
-                    <span class="pv-image-label">Layout Rafa</span>
-                    {% if project.layout_rafa %}
-                    <img src="{{ url_for('static', filename='uploads/' + project.layout_rafa) }}" alt="Layout" class="pv-image">
+                    <span class="pv-image-label">Layout Montado</span>
+                    {% if project.foto_layout %}
+                    <img src="{{ url_for('static', filename='uploads/' + project.foto_layout) }}" alt="Layout" class="pv-image">
                     {% else %}
                     <div class="pv-image-empty">Sem layout</div>
                     {% endif %}

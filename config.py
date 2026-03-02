@@ -12,4 +12,4 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     DATA_DIR = DATA_DIR
     UPLOAD_DIR = UPLOAD_DIR
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024  # 2GB max upload

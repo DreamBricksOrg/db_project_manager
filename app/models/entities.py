@@ -89,7 +89,7 @@ class Project:
     endereco: str = ''
     descricao: str = ''
     imagem_referencia: str = ''
-    layout_rafa: str = ''
+    foto_layout: str = ''
     galeria: list[str] = field(default_factory=list) # List of filenames
     link_drive: str = ''
     status: str = 'Em Andamento' 

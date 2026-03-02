@@ -165,6 +165,11 @@ def view_project(id):
     project['inicio_veiculacao'] = format_date_br(project.get('inicio_veiculacao', ''))
     project['fim_veiculacao'] = format_date_br(project.get('fim_veiculacao', ''))
     
+    # Format datas parciais
+    for item in project.get('datas_parciais', []):
+        if isinstance(item, dict) and 'data' in item:
+            item['data'] = format_date_br(item.get('data', ''))
+            
     # Check for child entities
     plan = next((p for p in plans_repo.get_all() if p.get('project_id') == id), None)
     graphics = next((g for g in graphics_repo.get_all() if g.get('project_id') == id), None)
@@ -316,13 +321,13 @@ def save_project(id):
             f.save(os.path.join(current_app.config['UPLOAD_DIR'], fname))
             data['imagem_referencia'] = fname
             
-    # layout_rafa
-    if 'layout_rafa' in request.files:
-        f = request.files['layout_rafa']
+    # foto_layout
+    if 'foto_layout' in request.files:
+        f = request.files['foto_layout']
         if f and allowed_file(f.filename):
             fname = secure_filename(f"layout_{id or 'new'}_{f.filename}")
             f.save(os.path.join(current_app.config['UPLOAD_DIR'], fname))
-            data['layout_rafa'] = fname
+            data['foto_layout'] = fname
             
     # galeria (multiple)
     if 'galeria' in request.files:

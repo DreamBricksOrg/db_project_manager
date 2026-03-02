@@ -303,7 +303,7 @@ def new_plan():
                 'fim_veiculacao': project.get('fim_veiculacao', ''),
                 # Project images can be carried over?
                 'imagem_referencia': project.get('imagem_referencia', ''),
-                'foto_layout': project.get('layout_rafa', '') # Assuming layout_rafa corresponds to foto_layout
+                'foto_layout': project.get('foto_layout', '')
             }
             # Add flash message to inform user
             flash('Dados pré-preenchidos a partir do Projeto.', 'info')
