@@ -10,6 +10,32 @@ from app.repositories import projects_repo, plans_repo, graphics_repo, equipment
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'}
 
+# Fields that are mirrored between Project and InstallationPlan (project_field -> plan_field)
+PROJECT_TO_PLAN_FIELD_MAP = {
+    'nome': 'nome_projeto',
+    'cliente': 'cliente',
+    'endereco': 'endereco',
+    'descricao': 'descricao',
+    'data_instalacao': 'data_instalacao',
+    'data_remocao': 'data_remocao',
+    'inicio_veiculacao': 'inicio_veiculacao',
+    'fim_veiculacao': 'fim_veiculacao',
+    'produtor_db': 'produtor_responsavel',
+}
+
+
+def _sync_project_to_plan(project_id: str, project_data: dict) -> None:
+    """After saving a project, propagate shared fields to the linked plan."""
+    linked_plan = next((p for p in plans_repo.get_all() if p.get('project_id') == project_id), None)
+    if not linked_plan:
+        return
+    updates = {plan_field: project_data[proj_field]
+               for proj_field, plan_field in PROJECT_TO_PLAN_FIELD_MAP.items()
+               if proj_field in project_data}
+    if updates:
+        plans_repo.update(linked_plan['id'], {**linked_plan, **updates})
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -324,6 +350,7 @@ def save_project(id):
 
     if id:
         projects_repo.update(id, data)
+        _sync_project_to_plan(id, data)
         flash('Projeto atualizado.', 'success')
         return redirect(url_for('projects.view_project', id=id))
     else:

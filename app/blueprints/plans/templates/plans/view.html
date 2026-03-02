@@ -214,13 +214,34 @@
         "></div>
         <div>
             <strong style="display: block; margin-bottom: 4px;">Cor Selecionada</strong>
-            <span style="font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;" title="Hex">{{ plan.cor_iluminacao }}</span>
+            <span onclick="copyPlanColor(this, '{{ plan.cor_iluminacao }}')" style="cursor: pointer; font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; transition: all 0.2s;" title="Clique para copiar Hex">{{ plan.cor_iluminacao }}</span>
             {% if plan.rgb_iluminacao %}
-            <span style="font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;" title="RGB">RGB({{ plan.rgb_iluminacao }})</span>
+            <span onclick="copyPlanColor(this, 'RGB({{ plan.rgb_iluminacao }})')" style="cursor: pointer; font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px; transition: all 0.2s;" title="Clique para copiar RGB">RGB({{ plan.rgb_iluminacao }})</span>
             {% endif %}
         </div>
     </div>
 </div>
+<script>
+function copyPlanColor(el, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = el.innerText;
+        const originalBg = el.style.backgroundColor;
+        const originalColor = el.style.color;
+        
+        el.innerText = 'Copiado!';
+        el.style.backgroundColor = '#10b981'; // Tailwind emerald-500
+        el.style.color = '#ffffff';
+        
+        setTimeout(() => {
+            el.innerText = originalText;
+            el.style.backgroundColor = originalBg;
+            el.style.color = originalColor;
+        }, 1500);
+    }).catch(err => {
+        console.error('Falha ao copiar:', err);
+    });
+}
+</script>
 {% endif %}
 
 <!-- Notes -->

@@ -14,8 +14,33 @@ from app.blueprints.auth.routes import login_required, admin_required
 from app.repositories import (
     plans_repo, contacts_repo, producers_repo, 
     installers_repo, services_repo, materials_repo,
-    tools_repo, equipment_repo
+    tools_repo, equipment_repo, projects_repo
 )
+
+# Fields mirrored between Plan and Project (plan_field -> project_field)
+PLAN_TO_PROJECT_FIELD_MAP = {
+    'nome_projeto': 'nome',
+    'cliente': 'cliente',
+    'endereco': 'endereco',
+    'descricao': 'descricao',
+    'data_instalacao': 'data_instalacao',
+    'data_remocao': 'data_remocao',
+    'inicio_veiculacao': 'inicio_veiculacao',
+    'fim_veiculacao': 'fim_veiculacao',
+    'produtor_responsavel': 'produtor_db',
+}
+
+
+def _sync_plan_to_project(project_id: str, plan_data: dict) -> None:
+    """After saving a plan, propagate shared fields back to the linked project."""
+    project = projects_repo.get_by_id(project_id)
+    if not project:
+        return
+    updates = {proj_field: plan_data[plan_field]
+               for plan_field, proj_field in PLAN_TO_PROJECT_FIELD_MAP.items()
+               if plan_field in plan_data}
+    if updates:
+        projects_repo.update(project_id, {**project, **updates})
 
 # Status colors for the Gantt chart
 STATUS_COLORS = {
@@ -28,8 +53,6 @@ STATUS_COLORS = {
 
 def get_plan_status(plan):
     """Derive status from project data if not explicitly set."""
-    # Try to get from linked project
-    from app.repositories import projects_repo
     project_id = plan.get('project_id')
     if project_id:
         project = projects_repo.get_by_id(project_id)
@@ -554,6 +577,8 @@ def save_plan(plan_id):
     
     if plan_id:
         plans_repo.update(plan_id, data)
+        if data.get('project_id'):
+            _sync_plan_to_project(data['project_id'], data)
         flash('Plano atualizado!', 'success')
     else:
         plans_repo.create(data)
