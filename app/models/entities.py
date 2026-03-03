@@ -151,3 +151,15 @@ class InstallationPlan:
     project_id: str = ''
     # Status
     status: str = 'Em Andamento'
+
+
+@dataclass
+class PlanTemplate:
+    id: str
+    nome: str
+    descricao: str = ''
+    servicos_externos: list[dict] = field(default_factory=list)
+    materiais: list[str] = field(default_factory=list)
+    ferramentas: list[str] = field(default_factory=list)
+    equipamentos: list[str] = field(default_factory=list)
+    informacoes_importantes: str = ''

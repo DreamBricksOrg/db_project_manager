@@ -5,7 +5,7 @@ import json
 import io
 import calendar
 from datetime import datetime, date
-from flask import render_template, redirect, url_for, request, flash, current_app, send_file
+from flask import render_template, redirect, url_for, request, flash, current_app, send_file, jsonify
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
 
@@ -14,7 +14,7 @@ from app.blueprints.auth.routes import login_required, admin_required
 from app.repositories import (
     plans_repo, contacts_repo, producers_repo, 
     installers_repo, services_repo, materials_repo,
-    tools_repo, equipment_repo, projects_repo
+    tools_repo, equipment_repo, projects_repo, plan_templates_repo
 )
 
 # Fields mirrored between Plan and Project (plan_field -> project_field)
@@ -289,31 +289,41 @@ def new_plan():
     
     plan_data = None
     project_id = request.args.get('project_id')
+    template_id = request.args.get('template_id')
     
     if project_id:
-        from app.repositories import projects_repo # Import here to avoid circular dependency if any
         project = projects_repo.get_by_id(project_id)
         if project:
-            # Pre-fill plan with project data
             plan_data = {
                 'project_id': project_id,
                 'nome_projeto': project.get('nome', ''),
                 'cliente': project.get('cliente', ''),
                 'produtor_responsavel': project.get('produtor_db', ''),
-                'telefone_contato': project.get('produtor_db_contato', ''), # Pre-fill with DB Producer Phone
+                'telefone_contato': project.get('produtor_db_contato', ''),
                 'endereco': project.get('endereco', ''),
                 'descricao': project.get('descricao', ''),
-                # Dates (Project uses ISO YYYY-MM-DD, Plan Form uses ISO for type="date")
                 'data_instalacao': project.get('data_instalacao', ''),
                 'data_remocao': project.get('data_remocao', ''),
                 'inicio_veiculacao': project.get('inicio_veiculacao', ''),
                 'fim_veiculacao': project.get('fim_veiculacao', ''),
-                # Project images can be carried over?
                 'imagem_referencia': project.get('imagem_referencia', ''),
                 'foto_layout': project.get('foto_layout', '')
             }
-            # Add flash message to inform user
             flash('Dados pré-preenchidos a partir do Projeto.', 'info')
+    
+    # Apply template data on top of project data (or standalone)
+    if template_id:
+        tpl = plan_templates_repo.get_by_id(template_id)
+        if tpl:
+            if plan_data is None:
+                plan_data = {}
+            plan_data['descricao'] = tpl.get('descricao', '') or plan_data.get('descricao', '')
+            plan_data['servicos_externos'] = tpl.get('servicos_externos', [])
+            plan_data['materiais'] = tpl.get('materiais', [])
+            plan_data['ferramentas'] = tpl.get('ferramentas', [])
+            plan_data['equipamentos'] = tpl.get('equipamentos', [])
+            plan_data['informacoes_importantes'] = tpl.get('informacoes_importantes', '')
+            flash(f'Template "{tpl.get("nome", "")}" aplicado.', 'info')
 
     # Load data for autocomplete
     context = get_form_context()
@@ -597,3 +607,61 @@ def save_plan(plan_id):
         return redirect(url_for('projects.view_project', id=data['project_id']))
         
     return redirect(url_for('plans.list_plans'))
+
+
+# ---- Template Routes ----
+
+@plans_bp.route('/<id>/save-template', methods=['POST'])
+@login_required
+def save_template(id):
+    """Save current plan data as a reusable template."""
+    plan = plans_repo.get_by_id(id)
+    if not plan:
+        flash('Plano não encontrado.', 'error')
+        return redirect(url_for('plans.list_plans'))
+    
+    nome = request.form.get('template_name', '').strip()
+    if not nome:
+        flash('Informe um nome para o template.', 'error')
+        return redirect(url_for('plans.edit_plan', id=id))
+    
+    from app.models.entities import generate_id
+    template_data = {
+        'id': generate_id(),
+        'nome': nome,
+        'descricao': plan.get('descricao', ''),
+        'servicos_externos': plan.get('servicos_externos', []),
+        'materiais': plan.get('materiais', []),
+        'ferramentas': plan.get('ferramentas', []),
+        'equipamentos': plan.get('equipamentos', []),
+        'informacoes_importantes': plan.get('informacoes_importantes', ''),
+    }
+    plan_templates_repo.create(template_data)
+    flash(f'Template "{nome}" salvo com sucesso!', 'success')
+    return redirect(url_for('plans.edit_plan', id=id))
+
+
+@plans_bp.route('/templates')
+@login_required
+def list_templates():
+    """List all plan templates."""
+    templates = plan_templates_repo.get_all()
+    return render_template('plans/templates_list.html', templates=templates)
+
+
+@plans_bp.route('/templates/<id>/delete', methods=['POST'])
+@login_required
+def delete_template(id):
+    """Delete a plan template."""
+    plan_templates_repo.delete(id)
+    flash('Template excluído.', 'success')
+    return redirect(url_for('plans.list_templates'))
+
+
+@plans_bp.route('/api/templates')
+@login_required
+def api_templates():
+    """Return all templates as JSON (for modals)."""
+    templates = plan_templates_repo.get_all()
+    result = [{'id': t['id'], 'nome': t.get('nome', '')} for t in templates]
+    return jsonify(result)

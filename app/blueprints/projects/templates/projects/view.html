@@ -180,7 +180,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-left:auto;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
                 </a>
                 {% else %}
-                <a href="{{ url_for('plans.new_plan', project_id=project.id) }}" class="pv-quick-link">
+                <a href="#" onclick="event.preventDefault(); openTemplateModal()" class="pv-quick-link">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                     <span>Criar Plano de Instalação</span>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-left:auto;opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
@@ -380,4 +380,52 @@
     }
 }
 </style>
+
+{% if not plan %}
+<!-- Modal: Choose Template -->
+<div id="templateChoiceModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:80vh; overflow-y:auto;">
+        <h3 style="margin:0 0 8px 0;">Usar Template?</h3>
+        <p style="color:#64748b; margin:0 0 20px 0; font-size:0.9rem;">
+            Selecione um template para pré-preencher o plano de instalação, ou crie sem template.
+        </p>
+        <div id="templateList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+            <p style="color:#94a3b8; text-align:center;">Carregando templates...</p>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid #e2e8f0; padding-top:16px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('templateChoiceModal').style.display='none'">Cancelar</button>
+            <a href="{{ url_for('plans.new_plan', project_id=project.id) }}" class="btn btn-primary">Gerar sem Template</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function openTemplateModal() {
+    const modal = document.getElementById('templateChoiceModal');
+    const list = document.getElementById('templateList');
+    modal.style.display = 'flex';
+    
+    fetch('{{ url_for("plans.api_templates") }}')
+        .then(r => r.json())
+        .then(templates => {
+            if (templates.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8; text-align:center;">Nenhum template disponível.</p>';
+                return;
+            }
+            list.innerHTML = '';
+            templates.forEach(t => {
+                const btn = document.createElement('a');
+                btn.href = '{{ url_for("plans.new_plan", project_id=project.id) }}&template_id=' + t.id;
+                btn.className = 'btn btn-secondary';
+                btn.style.cssText = 'text-align:left; display:block; padding:12px 16px; border:1px solid #e2e8f0; border-radius:8px;';
+                btn.textContent = t.nome;
+                list.appendChild(btn);
+            });
+        })
+        .catch(() => {
+            list.innerHTML = '<p style="color:#ef4444;">Erro ao carregar templates.</p>';
+        });
+}
+</script>
+{% endif %}
 {% endblock %}
