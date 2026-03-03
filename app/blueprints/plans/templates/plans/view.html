@@ -30,6 +30,18 @@
 
             <dt>Produtor</dt>
             <dd>{{ plan.produtor_responsavel or '—' }}</dd>
+            
+            <dt>Status</dt>
+            <dd>
+                {% set status_class = {
+                    'Não Iniciado': 'badge-neutral',
+                    'Em Andamento': 'badge-warning',
+                    'Testes': 'badge-info',
+                    'Instalado': 'badge-primary',
+                    'Concluído': 'badge-success'
+                } %}
+                <span class="badge {{ status_class.get(plan.status, 'badge-warning') }}">{{ plan.status or 'Em Andamento' }}</span>
+            </dd>
         </dl>
     </div>
 

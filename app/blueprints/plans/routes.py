@@ -28,6 +28,7 @@ PLAN_TO_PROJECT_FIELD_MAP = {
     'inicio_veiculacao': 'inicio_veiculacao',
     'fim_veiculacao': 'fim_veiculacao',
     'produtor_responsavel': 'produtor_db',
+    'status': 'status',
 }
 
 
@@ -52,7 +53,9 @@ STATUS_COLORS = {
 }
 
 def get_plan_status(plan):
-    """Derive status from project data if not explicitly set."""
+    """Derive status from plan data, fallback to project if older."""
+    if 'status' in plan and plan['status']:
+        return plan['status']
     project_id = plan.get('project_id')
     if project_id:
         project = projects_repo.get_by_id(project_id)
@@ -106,7 +109,11 @@ def list_plans():
     q = request.args.get('q', '').strip().lower()
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
-    status_filter = request.args.get('status', '')
+    
+    if 'status' in request.args:
+        status_filter = request.args.get('status', '')
+    else:
+        status_filter = 'Em Andamento'
     
     # Gantt month/year filters (default to current)
     today = date.today()
@@ -527,6 +534,7 @@ def save_plan(plan_id):
         'equipamentos': equipamentos,
         'cor_iluminacao': request.form.get('cor_iluminacao', '#ffffff'),
         'informacoes_importantes': request.form.get('informacoes_importantes', '').strip(),
+        'status': request.form.get('status', 'Em Andamento'),
     }
     
     # Preserve existing filepaths if not updated

@@ -21,6 +21,7 @@ PROJECT_TO_PLAN_FIELD_MAP = {
     'inicio_veiculacao': 'inicio_veiculacao',
     'fim_veiculacao': 'fim_veiculacao',
     'produtor_db': 'produtor_responsavel',
+    'status': 'status',
 }
 
 

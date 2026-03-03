@@ -17,10 +17,24 @@
             <h2 class="card-title">Informações Básicas</h2>
         </div>
 
-        <div class="form-group">
-            <label class="form-label" for="nome_projeto">Nome do Projeto *</label>
-            <input type="text" id="nome_projeto" name="nome_projeto" class="form-input"
-                value="{{ plan.nome_projeto if plan else '' }}" required>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="nome_projeto">Nome do Projeto *</label>
+                <input type="text" id="nome_projeto" name="nome_projeto" class="form-input"
+                    value="{{ plan.nome_projeto if plan else '' }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="status">Status do Projeto/Plano</label>
+                <select id="status" name="status" class="form-input">
+                    {% set current_status = plan.status if plan and plan.status else 'Em Andamento' %}
+                    <option value="Não Iniciado" {% if current_status == 'Não Iniciado' %}selected{% endif %}>Não Iniciado</option>
+                    <option value="Em Andamento" {% if current_status == 'Em Andamento' %}selected{% endif %}>Em Andamento</option>
+                    <option value="Testes" {% if current_status == 'Testes' %}selected{% endif %}>Testes</option>
+                    <option value="Instalado" {% if current_status == 'Instalado' %}selected{% endif %}>Instalado</option>
+                    <option value="Concluído" {% if current_status == 'Concluído' %}selected{% endif %}>Concluído</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-row">

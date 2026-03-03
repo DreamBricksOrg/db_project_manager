@@ -137,6 +137,7 @@
                         Projeto {% if sort_by == 'projeto' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
                     </a>
                 </th>
+                <th>Status</th>
                 <th class="sortable-th">
                     <a href="{{ url_for('plans.list_plans', sort_by='cliente', sort_dir='desc' if sort_by == 'cliente' and sort_dir == 'asc' else 'asc', **base_params) }}" class="sort-link {% if sort_by == 'cliente' %}active{% endif %}">
                         Cliente {% if sort_by == 'cliente' %}{{ '▲' if sort_dir == 'asc' else '▼' }}{% endif %}
@@ -159,6 +160,16 @@
             {% for plan in plans %}
             <tr>
                 <td data-label="Projeto"><strong>{{ plan.nome_projeto }}</strong></td>
+                <td data-label="Status">
+                    {% set status_class = {
+                        'Não Iniciado': 'badge-neutral',
+                        'Em Andamento': 'badge-warning',
+                        'Testes': 'badge-info',
+                        'Instalado': 'badge-primary',
+                        'Concluído': 'badge-success'
+                    } %}
+                    <span class="badge {{ status_class.get(plan._status, 'badge-warning') }}">{{ plan._status or 'Em Andamento' }}</span>
+                </td>
                 <td data-label="Cliente">{{ plan.cliente or '—' }}</td>
                 <td data-label="Data Instalação">
                     {% if plan.data_instalacao %}

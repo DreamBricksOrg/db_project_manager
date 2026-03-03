@@ -149,3 +149,5 @@ class InstallationPlan:
     imagem_referencia: str = ''
     # Relationships
     project_id: str = ''
+    # Status
+    status: str = 'Em Andamento'
