@@ -192,6 +192,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             initMasks();
             showFlashMessages();
+            
+            // Request camera and geolocation permissions early
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(() => {}, () => {}, { timeout: 1000 });
+            }
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+                    .catch(() => {});
+            }
         });
         document.addEventListener('htmx:afterSwap', initMasks);
     </script>

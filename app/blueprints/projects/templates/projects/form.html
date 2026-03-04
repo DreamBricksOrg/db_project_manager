@@ -404,9 +404,20 @@ function openTemplateModal() {
                             data.forEach(item => {
                                  const div = document.createElement('div');
                                 div.className = 'autocomplete-item';
-                                div.textContent = item.display_name;
+                                // Build short address
+                                let shortAddr = item.display_name;
+                                if (item.address) {
+                                    const a = item.address;
+                                    const parts = [];
+                                    if (a.road) parts.push(a.road + (a.house_number ? ', ' + a.house_number : ''));
+                                    if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+                                    if (a.city || a.town || a.village) parts.push(a.city || a.town || a.village);
+                                    if (a.postcode) parts.push(a.postcode);
+                                    if (parts.length) shortAddr = parts.join(', ');
+                                }
+                                div.textContent = shortAddr;
                                 div.onclick = function () {
-                                    addressInput.value = item.display_name;
+                                    addressInput.value = shortAddr;
                                     addressResults.style.display = 'none';
                                 };
                                 addressResults.appendChild(div);

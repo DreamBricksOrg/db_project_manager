@@ -1,12 +1,15 @@
 import os
 import io
 import json
+import uuid
 from datetime import datetime
-from flask import render_template, redirect, url_for, request, flash, current_app, send_file
+from flask import render_template, redirect, url_for, request, flash, current_app, send_file, jsonify
 from werkzeug.utils import secure_filename
+from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
 from app.blueprints.projects import projects_bp
 from app.blueprints.auth.routes import login_required
-from app.repositories import projects_repo, plans_repo, graphics_repo, equipment_repo
+from app.repositories import projects_repo, plans_repo, graphics_repo, equipment_repo, installation_photos_repo
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'}
 
@@ -175,12 +178,16 @@ def view_project(id):
     plan = next((p for p in plans_repo.get_all() if p.get('project_id') == id), None)
     graphics = next((g for g in graphics_repo.get_all() if g.get('project_id') == id), None)
     equipment = next((e for e in equipment_repo.get_all() if e.get('project_id') == id), None)
+    # Installation photos
+    photos = [p for p in installation_photos_repo.get_all() if p.get('project_id') == id]
+    photos.sort(key=lambda x: x.get('created_at', ''), reverse=True)
     
     return render_template('projects/view.html', 
                          project=project, 
                          plan=plan, 
                          graphics=graphics, 
-                         equipment=equipment)
+                         equipment=equipment,
+                         photos=photos)
 
 @projects_bp.route('/<id>/plan-redirect')
 @login_required
@@ -363,3 +370,152 @@ def save_project(id):
         new_proj = projects_repo.create(data)
         flash('Projeto criado.', 'success')
         return redirect(url_for('projects.view_project', id=new_proj['id']))
+
+
+def _extract_exif(image_file):
+    """Extract date, device, GPS from image EXIF data."""
+    result = {'datetime': None, 'device': None, 'latitude': None, 'longitude': None}
+    try:
+        image_file.seek(0)
+        img = Image.open(image_file)
+        exif_data = img._getexif()
+        if not exif_data:
+            return result
+        
+        exif = {TAGS.get(k, k): v for k, v in exif_data.items()}
+        
+        # Date
+        dt_str = exif.get('DateTimeOriginal') or exif.get('DateTime')
+        if dt_str and isinstance(dt_str, str):
+            try:
+                dt = datetime.strptime(dt_str, '%Y:%m:%d %H:%M:%S')
+                result['datetime'] = dt.strftime('%d/%m/%Y %H:%M:%S')
+            except ValueError:
+                pass
+        
+        # Device
+        make = exif.get('Make', '')
+        model = exif.get('Model', '')
+        if make or model:
+            device = f"{make} {model}".strip()
+            result['device'] = device
+        
+        # GPS
+        gps_info = exif.get('GPSInfo')
+        if gps_info:
+            gps = {GPSTAGS.get(k, k): v for k, v in gps_info.items()}
+            
+            def _dms_to_dd(dms, ref):
+                try:
+                    d, m, s = [float(x) for x in dms]
+                    dd = d + m / 60 + s / 3600
+                    if ref in ('S', 'W'):
+                        dd = -dd
+                    return round(dd, 6)
+                except Exception:
+                    return None
+            
+            lat_dms = gps.get('GPSLatitude')
+            lat_ref = gps.get('GPSLatitudeRef', 'N')
+            lon_dms = gps.get('GPSLongitude')
+            lon_ref = gps.get('GPSLongitudeRef', 'W')
+            
+            if lat_dms and lon_dms:
+                result['latitude'] = _dms_to_dd(lat_dms, lat_ref)
+                result['longitude'] = _dms_to_dd(lon_dms, lon_ref)
+    except Exception:
+        pass
+    finally:
+        image_file.seek(0)
+    return result
+
+
+@projects_bp.route('/<id>/photos', methods=['POST'])
+@login_required
+def upload_photo(id):
+    """Upload an installation photo with metadata."""
+    project = projects_repo.get_by_id(id)
+    if not project:
+        return jsonify({'error': 'Projeto não encontrado'}), 404
+    
+    if 'photo' not in request.files:
+        return jsonify({'error': 'Nenhuma foto enviada'}), 400
+    
+    f = request.files['photo']
+    if not f or not allowed_file(f.filename):
+        return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
+    
+    # Extract EXIF before saving
+    exif = _extract_exif(f)
+    
+    # Save file
+    ext = f.filename.rsplit('.', 1)[-1].lower()
+    fname = secure_filename(f"install_{id}_{uuid.uuid4().hex[:8]}.{ext}")
+    f.save(os.path.join(current_app.config['UPLOAD_DIR'], fname))
+    
+    # Build metadata
+    now_br = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    
+    photo_data = {
+        'id': str(uuid.uuid4()),
+        'project_id': id,
+        'filename': fname,
+        'datetime_br': exif['datetime'] or now_br,
+        'device': exif['device'] or request.form.get('device', 'Desconhecido'),
+        'latitude': exif['latitude'] or request.form.get('latitude', ''),
+        'longitude': exif['longitude'] or request.form.get('longitude', ''),
+        'created_at': datetime.now().isoformat(),
+    }
+    
+    # Convert lat/lng from form to float if string
+    for coord in ('latitude', 'longitude'):
+        val = photo_data[coord]
+        if val and isinstance(val, str):
+            try:
+                photo_data[coord] = float(val)
+            except ValueError:
+                photo_data[coord] = None
+        if not val:
+            photo_data[coord] = None
+    
+    installation_photos_repo.create(photo_data)
+    
+    return jsonify({
+        'success': True,
+        'photo': {
+            'id': photo_data['id'],
+            'filename': fname,
+            'datetime_br': photo_data['datetime_br'],
+            'device': photo_data['device'],
+            'latitude': photo_data['latitude'],
+            'longitude': photo_data['longitude'],
+        }
+    })
+
+
+@projects_bp.route('/<id>/photos/<photo_id>/delete', methods=['POST'])
+@login_required
+def delete_photo(id, photo_id):
+    """Delete an installation photo."""
+    photo = installation_photos_repo.get_by_id(photo_id)
+    if photo:
+        # Delete file
+        filepath = os.path.join(current_app.config['UPLOAD_DIR'], photo.get('filename', ''))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        installation_photos_repo.delete(photo_id)
+    flash('Foto excluída.', 'success')
+    return redirect(url_for('projects.view_project', id=id))
+
+
+@projects_bp.route('/<id>/photos/<photo_id>/location', methods=['POST'])
+@login_required
+def update_photo_location(id, photo_id):
+    """Update a photo's location address manually."""
+    photo = installation_photos_repo.get_by_id(photo_id)
+    if not photo:
+        return jsonify({'error': 'Foto não encontrada'}), 404
+    
+    address = request.json.get('address', '').strip() if request.is_json else request.form.get('address', '').strip()
+    installation_photos_repo.update(photo_id, {'location_address': address})
+    return jsonify({'success': True, 'address': address})

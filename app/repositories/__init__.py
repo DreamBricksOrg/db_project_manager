@@ -41,3 +41,6 @@ equipment_repo = MongoRepository('equipment')
 # Plan template repository
 plan_templates_repo = MongoRepository('plan_templates')
 
+# Installation photos repository
+installation_photos_repo = MongoRepository('installation_photos')
+
