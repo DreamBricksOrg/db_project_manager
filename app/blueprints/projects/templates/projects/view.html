@@ -286,14 +286,43 @@
     </div>
 </div>
 
+<!-- Drive Login Modal -->
+<div id="driveLoginModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); text-align:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:48px;height:48px;color:#f59e0b;margin-bottom:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
+        <h3 style="margin:0 0 8px 0;">Conectar Google Drive</h3>
+        <p style="color:#64748b; margin:0 0 20px 0; font-size:0.9rem;">Para fazer upload de fotos, é necessário conectar sua conta do Google Drive primeiro.</p>
+        <div style="display:flex; gap:8px; justify-content:center;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('driveLoginModal').style.display='none'">Cancelar</button>
+            <a href="{{ url_for('drive.auth') }}" class="btn btn-primary">Conectar Drive</a>
+        </div>
+    </div>
+</div>
+
 <script>
 // --- Installation Photos ---
 const PROJECT_ID = '{{ project.id }}';
 let currentGeoPosition = null;
 
 function triggerPhotoUpload(mode) {
+    // Check Drive connection first
+    fetch('/drive/check')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.connected) {
+                document.getElementById('driveLoginModal').style.display = 'flex';
+                return;
+            }
+            _doPhotoUpload(mode);
+        })
+        .catch(() => {
+            // If check fails (network), allow upload anyway (local save will work)
+            _doPhotoUpload(mode);
+        });
+}
+
+function _doPhotoUpload(mode) {
     if (mode === 'camera') {
-        // Try to get geolocation when opening camera
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 pos => { currentGeoPosition = pos.coords; },

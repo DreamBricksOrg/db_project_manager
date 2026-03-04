@@ -10,6 +10,7 @@ services:
     volumes:
       - app_data:/app/data
       - app_uploads:/app/app/static/uploads
+      - ./secrets:/app/secrets
     depends_on:
       mongodb:
         condition: service_started

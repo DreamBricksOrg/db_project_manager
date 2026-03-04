@@ -478,6 +478,21 @@ def upload_photo(id):
         if not val:
             photo_data[coord] = None
     
+    # Upload to Google Drive (best-effort)
+    drive_info = None
+    try:
+        from app.services.google_drive import upload_to_drive
+        project = projects_repo.get_by_id(id)
+        project_name = project.get('nome', f'Projeto_{id}')
+        filepath = os.path.join(current_app.config['UPLOAD_DIR'], fname)
+        drive_info = upload_to_drive(project_name, filepath, fname)
+    except Exception as e:
+        print(f'[Drive] Upload skipped: {e}')
+
+    if drive_info:
+        photo_data['drive_file_id'] = drive_info.get('file_id')
+        photo_data['drive_web_link'] = drive_info.get('web_link')
+
     installation_photos_repo.create(photo_data)
     
     return jsonify({

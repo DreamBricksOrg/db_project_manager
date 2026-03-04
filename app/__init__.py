@@ -26,6 +26,9 @@ def create_app(config_class=Config):
     from app.blueprints.projects import projects_bp
     app.register_blueprint(projects_bp, url_prefix='/projects')
 
+    from app.blueprints.drive import drive_bp
+    app.register_blueprint(drive_bp)
+
     # Root redirect
     @app.route('/')
     def index():

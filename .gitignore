@@ -212,3 +212,5 @@ mongodb_data/
 # Uploaded Files
 app/static/uploads/
 !app/static/uploads/.gitkeep
+
+secrets
