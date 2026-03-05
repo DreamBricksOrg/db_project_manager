@@ -78,7 +78,7 @@ def upload_to_drive(project_name, filepath, filename):
 
     try:
         # Projetos > ProjectName > Fotos da Instalação
-        projetos_id = get_or_create_folder(service, 'Projetos')
+        projetos_id = get_or_create_folder(service, 'Fotos_Projetos')
         project_id = get_or_create_folder(service, project_name, projetos_id)
         photos_id = get_or_create_folder(service, 'Fotos da Instalação', project_id)
 
