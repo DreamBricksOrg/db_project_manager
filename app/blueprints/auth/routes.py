@@ -4,7 +4,7 @@ from flask import render_template, redirect, url_for, request, session, flash
 from functools import wraps
 
 from app.blueprints.auth import auth_bp
-from app.repositories import users_repo, installers_repo, producers_repo
+from app.repositories import users_repo
 
 
 def login_required(f):

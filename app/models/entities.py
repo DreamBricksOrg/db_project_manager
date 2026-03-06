@@ -1,7 +1,6 @@
 """Data Models - Dataclasses for all entities"""
 
 from dataclasses import dataclass, field
-from typing import Optional
 import uuid
 
 

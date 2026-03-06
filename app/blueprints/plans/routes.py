@@ -1,7 +1,6 @@
 """Plans Routes - Installation plans management"""
 
 import os
-import json
 import io
 import calendar
 from datetime import datetime, date

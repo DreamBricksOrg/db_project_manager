@@ -1,9 +1,7 @@
 import os
-import io
-import json
 import uuid
 from datetime import datetime
-from flask import render_template, redirect, url_for, request, flash, current_app, send_file, jsonify
+from flask import render_template, redirect, url_for, request, flash, current_app, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
@@ -506,6 +504,48 @@ def upload_photo(id):
             'longitude': photo_data['longitude'],
         }
     })
+
+
+@projects_bp.route('/<id>/photos/<photo_id>/sync', methods=['POST'])
+@login_required
+def sync_photo_drive(id, photo_id):
+    """Sincroniza uma foto existente com o Google Drive."""
+    photo = installation_photos_repo.get_by_id(photo_id)
+    if not photo:
+        return jsonify({'success': False, 'error': 'Foto não encontrada'}), 404
+        
+    if photo.get('drive_file_id'):
+        return jsonify({'success': True, 'message': 'Já sincronizado'})
+        
+    project = projects_repo.get_by_id(id)
+    if not project:
+        return jsonify({'success': False, 'error': 'Projeto não encontrado'}), 404
+        
+    filepath = os.path.join(current_app.config['UPLOAD_DIR'], photo.get('filename', ''))
+    if not os.path.exists(filepath):
+        return jsonify({'success': False, 'error': 'Arquivo local não encontrado'}), 404
+        
+    try:
+        from app.services.google_drive import upload_to_drive
+        project_name = project.get('nome', f'Projeto_{id}')
+        drive_info = upload_to_drive(project_name, filepath, photo.get('filename', ''))
+        
+        if drive_info:
+            updates = {
+                'drive_file_id': drive_info.get('file_id'),
+                'drive_web_link': drive_info.get('web_link')
+            }
+            installation_photos_repo.update(photo_id, updates)
+            return jsonify({
+                'success': True, 
+                'drive_file_id': drive_info.get('file_id'),
+                'drive_web_link': drive_info.get('web_link')
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Falha no upload para o Drive'}), 500
+    except Exception as e:
+        print(f'[Drive Sync Error] {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @projects_bp.route('/<id>/photos/<photo_id>/delete', methods=['POST'])

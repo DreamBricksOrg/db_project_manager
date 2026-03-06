@@ -224,7 +224,7 @@ def new_contact():
             contacts_repo.create(data)
             flash('Contato criado com sucesso!', 'success')
             return redirect(url_for('admin.list_contacts'))
-    return render_template('admin/contacts/form.html', contact=None);
+    return render_template('admin/contacts/form.html', contact=None)
 
 
 @admin_bp.route('/contacts/<id>/edit', methods=['GET', 'POST'])

@@ -1,5 +1,3 @@
-import os
-import json
 from pathlib import Path
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -104,3 +102,10 @@ def upload_to_drive(project_name, filepath, filename):
     except Exception as e:
         print(f'[Drive] Upload failed: {e}')
         return None
+
+
+def disconnect_drive():
+    if TOKEN_PATH.exists():
+        TOKEN_PATH.unlink()
+        return True
+    return False

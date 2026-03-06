@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 from app.database import get_db
 from app.models.entities import generate_id
 
@@ -36,7 +36,7 @@ class MongoRepository:
     def update(self, id: str, data: dict) -> Optional[dict]:
         """Update a document by its ID"""
         # $set will only update specified fields
-        result = self.collection.update_one({'id': id}, {'$set': data})
+        self.collection.update_one({'id': id}, {'$set': data})
         
         # Return the updated document
         return self.get_by_id(id)

@@ -1,5 +1,5 @@
 import os
-from flask import current_app, g
+from flask import g
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
