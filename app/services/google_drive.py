@@ -69,16 +69,27 @@ def get_or_create_folder(service, name, parent_id=None):
     return folder['id']
 
 
-def upload_to_drive(project_name, filepath, filename):
+def upload_to_drive(project_name, filepath, filename, drive_pasta=None):
     service = get_drive_service()
     if not service:
         return None
 
     try:
-        # Projetos > ProjectName > Fotos da Instalação
-        projetos_id = get_or_create_folder(service, 'Fotos_Projetos')
-        project_id = get_or_create_folder(service, project_name, projetos_id)
-        photos_id = get_or_create_folder(service, 'Fotos da Instalação', project_id)
+        # Root: Projetos
+        projetos_id = get_or_create_folder(service, 'Projetos')
+
+        # Navigate the folder path: drive_pasta segments or project_name
+        if drive_pasta:
+            segments = [s.strip() for s in drive_pasta.replace('\\', '/').split('/') if s.strip()]
+        else:
+            segments = [project_name]
+
+        current_parent = projetos_id
+        for segment in segments:
+            current_parent = get_or_create_folder(service, segment, current_parent)
+
+        # Final folder: Fotos da Instalação
+        photos_id = get_or_create_folder(service, 'Fotos da Instalação', current_parent)
 
         # Detect mimetype
         ext = filename.rsplit('.', 1)[-1].lower()

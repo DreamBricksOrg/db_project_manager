@@ -311,10 +311,31 @@
     </div>
 </div>
 
+<!-- Drive Pasta Modal -->
+<div id="drivePastaModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:12px; padding:32px; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 8px 0;">Definir Pasta do Drive</h3>
+        <p style="color:#64748b; margin:0 0 16px 0; font-size:0.9rem;">Informe o caminho da pasta do projeto dentro do Google Drive. A pasta raiz é sempre <strong>Projetos</strong> e a pasta final é <strong>Fotos da Instalação</strong>.</p>
+        <div class="form-group" style="margin-bottom:16px;">
+            <div class="d-flex align-items-center gap-2">
+                <span style="color:var(--color-slate); font-size:0.85rem; white-space:nowrap;">Projetos /</span>
+                <input type="text" id="drivePastaInput" class="form-input" placeholder="Ex: Estacio/2026" style="flex:1;">
+                <span style="color:var(--color-slate); font-size:0.85rem; white-space:nowrap;">/ Fotos da Instalação</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('drivePastaModal').style.display='none'">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="saveDrivePasta()">Salvar e Continuar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // --- Installation Photos ---
 const PROJECT_ID = '{{ project.id }}';
 let currentGeoPosition = null;
+let drivePasta = '{{ project.drive_pasta|default("", true) }}';
+let _pendingUploadMode = null;
 
 function triggerPhotoUpload(mode) {
     // Check Drive connection first
@@ -325,12 +346,44 @@ function triggerPhotoUpload(mode) {
                 document.getElementById('driveLoginModal').style.display = 'flex';
                 return;
             }
+            // Check if drive_pasta is defined
+            if (!drivePasta) {
+                _pendingUploadMode = mode;
+                document.getElementById('drivePastaModal').style.display = 'flex';
+                return;
+            }
             _doPhotoUpload(mode);
         })
         .catch(() => {
             // If check fails (network), allow upload anyway (local save will work)
             _doPhotoUpload(mode);
         });
+}
+
+function saveDrivePasta() {
+    const input = document.getElementById('drivePastaInput');
+    const val = input.value.trim();
+    if (!val) { alert('Informe o caminho da pasta.'); return; }
+    
+    fetch(`/projects/${PROJECT_ID}/drive-pasta`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({drive_pasta: val})
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            drivePasta = val;
+            document.getElementById('drivePastaModal').style.display = 'none';
+            if (_pendingUploadMode) {
+                _doPhotoUpload(_pendingUploadMode);
+                _pendingUploadMode = null;
+            }
+        } else {
+            alert('Erro ao salvar pasta: ' + (res.error || 'Desconhecido'));
+        }
+    })
+    .catch(() => alert('Erro de rede ao salvar pasta do Drive.'));
 }
 
 function _doPhotoUpload(mode) {

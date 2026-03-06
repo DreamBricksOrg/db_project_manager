@@ -299,7 +299,7 @@ def save_project(id):
         'fim_veiculacao': request.form.get('fim_veiculacao', ''),
         'endereco': request.form.get('endereco', '').strip(),
         'descricao': request.form.get('descricao', '').strip(),
-        # 'link_drive' removed from form
+        'drive_pasta': request.form.get('drive_pasta', '').strip(),
         'status': request.form.get('status', 'Em Andamento'),
         'conclusao': int(request.form.get('conclusao', 0)),
     }
@@ -482,8 +482,9 @@ def upload_photo(id):
         from app.services.google_drive import upload_to_drive
         project = projects_repo.get_by_id(id)
         project_name = project.get('nome', f'Projeto_{id}')
+        drive_pasta = project.get('drive_pasta', '')
         filepath = os.path.join(current_app.config['UPLOAD_DIR'], fname)
-        drive_info = upload_to_drive(project_name, filepath, fname)
+        drive_info = upload_to_drive(project_name, filepath, fname, drive_pasta=drive_pasta or None)
     except Exception as e:
         print(f'[Drive] Upload skipped: {e}')
 
@@ -528,7 +529,8 @@ def sync_photo_drive(id, photo_id):
     try:
         from app.services.google_drive import upload_to_drive
         project_name = project.get('nome', f'Projeto_{id}')
-        drive_info = upload_to_drive(project_name, filepath, photo.get('filename', ''))
+        drive_pasta = project.get('drive_pasta', '')
+        drive_info = upload_to_drive(project_name, filepath, photo.get('filename', ''), drive_pasta=drive_pasta or None)
         
         if drive_info:
             updates = {
@@ -574,3 +576,22 @@ def update_photo_location(id, photo_id):
     address = request.json.get('address', '').strip() if request.is_json else request.form.get('address', '').strip()
     installation_photos_repo.update(photo_id, {'location_address': address})
     return jsonify({'success': True, 'address': address})
+
+
+@projects_bp.route('/<id>/drive-pasta', methods=['POST'])
+@login_required
+def save_drive_pasta(id):
+    """Save the Drive folder path for a project via AJAX."""
+    project = projects_repo.get_by_id(id)
+    if not project:
+        return jsonify({'success': False, 'error': 'Projeto não encontrado'}), 404
+
+    drive_pasta = ''
+    if request.is_json:
+        drive_pasta = request.json.get('drive_pasta', '').strip()
+    else:
+        drive_pasta = request.form.get('drive_pasta', '').strip()
+
+    project['drive_pasta'] = drive_pasta
+    projects_repo.update(id, project)
+    return jsonify({'success': True, 'drive_pasta': drive_pasta})

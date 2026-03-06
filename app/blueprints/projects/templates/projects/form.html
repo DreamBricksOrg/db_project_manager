@@ -200,6 +200,23 @@
         </div>
     </div>
 
+    <!-- Drive Settings -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Configurações do Drive</h2>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Pasta do Projeto no Drive</label>
+            <div class="d-flex align-items-center gap-2">
+                <span style="color:var(--color-slate); font-size:0.85rem; white-space:nowrap;">Projetos /</span>
+                <input type="text" name="drive_pasta" class="form-input" value="{{ project.drive_pasta }}" placeholder="Ex: Estacio/2026" style="flex:1;">
+                <span style="color:var(--color-slate); font-size:0.85rem; white-space:nowrap;">/ Fotos da Instalação</span>
+            </div>
+            <small class="text-muted">Caminho da pasta no Google Drive. Se não existir, será criada automaticamente.</small>
+        </div>
+    </div>
+
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary btn-lg">Salvar Projeto</button>
         
