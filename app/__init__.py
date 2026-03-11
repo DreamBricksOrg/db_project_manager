@@ -1,12 +1,16 @@
 """OOH Project Manager - Flask Application Factory"""
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Trust reverse proxy headers (Nginx/ALB) so request.url uses https
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     # Ensure directories exist
     config_class.DATA_DIR.mkdir(exist_ok=True)
