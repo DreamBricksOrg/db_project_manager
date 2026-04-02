@@ -57,6 +57,10 @@ class MongoRepository:
         cursor = self.collection.find({field: regex}, {'_id': 0}).limit(limit)
         return list(cursor)
 
+    def get_by_project(self, project_id: str) -> List[dict]:
+        """Get all documents for a given project_id"""
+        return list(self.collection.find({'project_id': project_id}, {'_id': 0}))
+
     def get_unique_values(self, field: str) -> List[str]:
         """Get all unique values for a field"""
         # distinct() returns a list of unique values

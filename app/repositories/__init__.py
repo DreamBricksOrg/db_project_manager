@@ -44,3 +44,7 @@ plan_templates_repo = MongoRepository('plan_templates')
 # Installation photos repository
 installation_photos_repo = MongoRepository('installation_photos')
 
+# Kanban repositories
+kanban_tasks_repo = MongoRepository('kanban_tasks')
+kanban_columns_repo = MongoRepository('kanban_columns')
+kanban_tags_repo = MongoRepository('kanban_tags')

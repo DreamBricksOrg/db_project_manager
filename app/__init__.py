@@ -33,6 +33,9 @@ def create_app(config_class=Config):
     from app.blueprints.drive import drive_bp
     app.register_blueprint(drive_bp)
 
+    from app.blueprints.kanban import kanban_bp
+    app.register_blueprint(kanban_bp)
+
     # Root redirect
     @app.route('/')
     def index():

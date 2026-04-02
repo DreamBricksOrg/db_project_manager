@@ -1,0 +1,921 @@
+{% set project = project %}
+{% extends "base.html" %}
+
+{% block title %}Kanban – {{ project.nome }}{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ──────────────────────────────────────────────── -->
+<div class="kb-header">
+    <div class="kb-title-row">
+        <div>
+            <h1 class="kb-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:28px;height:28px;margin-right:10px;vertical-align:-5px">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v13.25c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+                Kanban
+            </h1>
+            <p class="kb-subtitle">{{ project.nome }}</p>
+        </div>
+        <div class="kb-actions">
+            <button class="btn btn-secondary btn-sm" id="btnManageTags">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" /></svg>
+                Tags
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnAddColumn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Nova Coluna
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Kanban Board ─────────────────────────────────────────────── -->
+<div class="kb-board" id="kanbanBoard">
+    {% for col in columns %}
+    <div class="kb-column" data-col-id="{{ col.id }}">
+        <div class="kb-col-header" style="border-top: 3px solid {{ col.color }}">
+            <div class="kb-col-title-row">
+                <span class="kb-col-dot" style="background:{{ col.color }}"></span>
+                <span class="kb-col-name" data-col-id="{{ col.id }}">{{ col.name }}</span>
+                <span class="kb-col-count" id="count-{{ col.id }}">{{ tasks_by_col[col.id]|length }}</span>
+            </div>
+            <div class="kb-col-actions">
+                <button class="kb-col-btn" title="Editar coluna" onclick="editColumn('{{ col.id }}', '{{ col.name }}', '{{ col.color }}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                </button>
+                <button class="kb-col-btn kb-col-btn-danger" title="Excluir coluna" onclick="deleteColumn('{{ col.id }}', '{{ col.name }}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="kb-cards" id="cards-{{ col.id }}" data-col-id="{{ col.id }}">
+            {% for task in tasks_by_col[col.id] %}
+            <div class="kb-card" data-task-id="{{ task.id }}" draggable="true" onclick="openTask('{{ task.id }}')">
+                {% if task.tags %}
+                <div class="kb-card-tags">
+                    {% for tag_name in task.tags %}
+                        {% set tag_obj = tags | selectattr('name','equalto',tag_name) | first %}
+                        {% if tag_obj %}
+                        <span class="kb-tag" style="background:{{ tag_obj.color }}22;color:{{ tag_obj.color }};border-color:{{ tag_obj.color }}44">{{ tag_name }}</span>
+                        {% else %}
+                        <span class="kb-tag">{{ tag_name }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <p class="kb-card-title">{{ task.title }}</p>
+
+                {% if task.description %}
+                <p class="kb-card-desc">{{ task.description | truncate(80) }}</p>
+                {% endif %}
+
+                <div class="kb-card-footer">
+                    <span class="kb-priority kb-priority-{{ task.priority }}">
+                        {% if task.priority == 'alta' %}🔴 Alta
+                        {% elif task.priority == 'media' %}🟡 Média
+                        {% else %}🟢 Baixa{% endif %}
+                    </span>
+                    <div class="kb-card-meta">
+                        {% if task.end_date %}
+                        <span class="kb-card-date {% if task.end_date < today %}kb-overdue{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                            {{ task.end_date }}
+                        </span>
+                        {% endif %}
+                        {% if task.assignee_name %}
+                        <span class="kb-avatar" title="{{ task.assignee_name }}">{{ task.assignee_name[0]|upper }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button class="kb-add-task" onclick="openNewTask('{{ col.id }}')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Adicionar tarefa
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Task Modal ───────────────────────────────────────────────── -->
+<div class="kb-modal-overlay" id="taskModalOverlay">
+    <div class="kb-modal" id="taskModal">
+        <div class="kb-modal-header">
+            <h2 class="kb-modal-title" id="taskModalTitle">Nova Tarefa</h2>
+            <button class="kb-modal-close" onclick="closeTaskModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div class="kb-modal-body">
+            <input type="hidden" id="taskId" value="">
+            <input type="hidden" id="taskColId" value="">
+
+            <div class="kb-field">
+                <label class="kb-label">Título *</label>
+                <input type="text" class="kb-input" id="taskTitle" placeholder="Descreva a tarefa...">
+            </div>
+
+            <div class="kb-field">
+                <label class="kb-label">Descrição</label>
+                <textarea class="kb-input kb-textarea" id="taskDesc" placeholder="Detalhes adicionais..."></textarea>
+            </div>
+
+            <div class="kb-form-row">
+                <div class="kb-field">
+                    <label class="kb-label">Prioridade</label>
+                    <select class="kb-input" id="taskPriority">
+                        <option value="baixa">🟢 Baixa</option>
+                        <option value="media" selected>🟡 Média</option>
+                        <option value="alta">🔴 Alta</option>
+                    </select>
+                </div>
+                <div class="kb-field">
+                    <label class="kb-label">Responsável</label>
+                    <select class="kb-input" id="taskAssignee">
+                        <option value="">— Nenhum —</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" data-name="{{ user.nome or user.username }}">{{ user.nome or user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="kb-form-row">
+                <div class="kb-field">
+                    <label class="kb-label">Data de Início</label>
+                    <input type="date" class="kb-input" id="taskStart">
+                </div>
+                <div class="kb-field">
+                    <label class="kb-label">Data de Fim</label>
+                    <input type="date" class="kb-input" id="taskEnd">
+                </div>
+            </div>
+
+            <div class="kb-field">
+                <label class="kb-label">Tags</label>
+                <div class="kb-tags-picker" id="tagsPicker">
+                    {% for tag in tags %}
+                    <label class="kb-tag-checkbox" style="--tc:{{ tag.color }}">
+                        <input type="checkbox" name="task_tags" value="{{ tag.name }}">
+                        <span>{{ tag.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="kb-modal-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()">Cancelar</button>
+            <button class="btn btn-primary btn-sm" id="btnDeleteTask" style="display:none;background:#ef4444" onclick="deleteCurrentTask()">Excluir</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveTask" onclick="saveTask()">Salvar Tarefa</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Column Modal ─────────────────────────────────────────────── -->
+<div class="kb-modal-overlay" id="colModalOverlay">
+    <div class="kb-modal kb-modal-sm" id="colModal">
+        <div class="kb-modal-header">
+            <h2 class="kb-modal-title" id="colModalTitle">Nova Coluna</h2>
+            <button class="kb-modal-close" onclick="closeColModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div class="kb-modal-body">
+            <input type="hidden" id="colId" value="">
+            <div class="kb-field">
+                <label class="kb-label">Nome da Coluna *</label>
+                <input type="text" class="kb-input" id="colName" placeholder="Ex: Em Revisão">
+            </div>
+            <div class="kb-field">
+                <label class="kb-label">Cor</label>
+                <div class="kb-color-row">
+                    <input type="color" class="kb-color-input" id="colColor" value="#6366f1">
+                    <div class="kb-preset-colors">
+                        <span class="kb-preset" style="background:#94a3b8" onclick="setColColor('#94a3b8')"></span>
+                        <span class="kb-preset" style="background:#f59e0b" onclick="setColColor('#f59e0b')"></span>
+                        <span class="kb-preset" style="background:#3b82f6" onclick="setColColor('#3b82f6')"></span>
+                        <span class="kb-preset" style="background:#10b981" onclick="setColColor('#10b981')"></span>
+                        <span class="kb-preset" style="background:#ef4444" onclick="setColColor('#ef4444')"></span>
+                        <span class="kb-preset" style="background:#f97316" onclick="setColColor('#f97316')"></span>
+                        <span class="kb-preset" style="background:#8b5cf6" onclick="setColColor('#8b5cf6')"></span>
+                        <span class="kb-preset" style="background:#06b6d4" onclick="setColColor('#06b6d4')"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="kb-modal-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closeColModal()">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="saveColumn()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tags Modal ───────────────────────────────────────────────── -->
+<div class="kb-modal-overlay" id="tagsModalOverlay">
+    <div class="kb-modal kb-modal-sm" id="tagsModal">
+        <div class="kb-modal-header">
+            <h2 class="kb-modal-title">Gerenciar Tags</h2>
+            <button class="kb-modal-close" onclick="closeTagsModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div class="kb-modal-body">
+            <div class="kb-tags-list" id="tagsManagerList">
+                {% for tag in tags %}
+                <div class="kb-tag-row">
+                    <span class="kb-tag-dot" style="background:{{ tag.color }}"></span>
+                    <span class="kb-tag-label">{{ tag.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="kb-field" style="margin-top:16px;border-top:1px solid var(--color-ice);padding-top:16px">
+                <label class="kb-label">Nova Tag</label>
+                <div class="kb-new-tag-row">
+                    <input type="text" class="kb-input" id="newTagName" placeholder="Nome da tag">
+                    <input type="color" class="kb-color-input" id="newTagColor" value="#6366f1">
+                    <button class="btn btn-primary btn-sm" onclick="createTag()">Criar</button>
+                </div>
+            </div>
+        </div>
+        <div class="kb-modal-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closeTagsModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────────
+const PROJECT_ID = "{{ project.id }}";
+const today      = "{{ now.strftime('%Y-%m-%d') if now else '' }}";
+let allTags = {{ tags | tojson }};
+
+// ── Task data store ───────────────────────────────────────────────────────────
+let taskStore = {};
+{% for col in columns %}
+{% for task in tasks_by_col[col.id] %}
+taskStore["{{ task.id }}"] = {{ task | tojson }};
+{% endfor %}
+{% endfor %}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+let draggedTaskId = null, draggedFromCol = null;
+
+document.querySelectorAll('.kb-card').forEach(card => {
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragend',   onDragEnd);
+});
+
+document.querySelectorAll('.kb-cards').forEach(zone => {
+    zone.addEventListener('dragover',  onDragOver);
+    zone.addEventListener('dragenter', onDragEnter);
+    zone.addEventListener('dragleave', onDragLeave);
+    zone.addEventListener('drop',      onDrop);
+});
+
+function onDragStart(e) {
+    draggedTaskId  = this.dataset.taskId;
+    draggedFromCol = this.closest('.kb-cards').dataset.colId;
+    this.classList.add('kb-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedTaskId);
+}
+function onDragEnd(e) {
+    document.querySelectorAll('.kb-card').forEach(c => c.classList.remove('kb-dragging'));
+    document.querySelectorAll('.kb-cards').forEach(z => z.classList.remove('kb-drag-over'));
+}
+function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function onDragEnter(e) { e.preventDefault(); this.classList.add('kb-drag-over'); }
+function onDragLeave(e)  { this.classList.remove('kb-drag-over'); }
+
+function onDrop(e) {
+    e.preventDefault();
+    this.classList.remove('kb-drag-over');
+    const toColId = this.dataset.colId;
+    const card    = document.querySelector(`[data-task-id="${draggedTaskId}"]`);
+
+    if (!card) return;
+    this.insertBefore(card, this.querySelector('.kb-ghost'));
+
+    const cards = [...this.querySelectorAll('.kb-card')];
+    const newOrder = cards.indexOf(card);
+
+    fetch(`/projects/${PROJECT_ID}/kanban/tasks/${draggedTaskId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ column_id: toColId, order: newOrder })
+    });
+
+    updateCounts();
+}
+
+// ── Task Modal ────────────────────────────────────────────────────────────────
+function openNewTask(colId) {
+    resetTaskModal();
+    document.getElementById('taskColId').value    = colId;
+    document.getElementById('taskModalTitle').textContent = 'Nova Tarefa';
+    document.getElementById('btnDeleteTask').style.display = 'none';
+    showModal('taskModalOverlay');
+}
+
+function openTask(taskId) {
+    const t = taskStore[taskId];
+    if (!t) return;
+    document.getElementById('taskId').value        = taskId;
+    document.getElementById('taskColId').value     = t.column_id;
+    document.getElementById('taskTitle').value     = t.title    || '';
+    document.getElementById('taskDesc').value      = t.description || '';
+    document.getElementById('taskPriority').value  = t.priority || 'media';
+    document.getElementById('taskAssignee').value  = t.assignee_id || '';
+    document.getElementById('taskStart').value     = t.start_date || '';
+    document.getElementById('taskEnd').value       = t.end_date   || '';
+    document.getElementById('taskModalTitle').textContent = 'Editar Tarefa';
+    document.getElementById('btnDeleteTask').style.display = 'inline-flex';
+
+    // Check tags
+    const taskTags = t.tags || [];
+    document.querySelectorAll('#tagsPicker input[name="task_tags"]').forEach(cb => {
+        cb.checked = taskTags.includes(cb.value);
+    });
+
+    showModal('taskModalOverlay');
+}
+
+async function saveTask() {
+    const taskId  = document.getElementById('taskId').value;
+    const colId   = document.getElementById('taskColId').value;
+    const title   = document.getElementById('taskTitle').value.trim();
+    if (!title) { alert('Título é obrigatório.'); return; }
+
+    const assigneeSelect = document.getElementById('taskAssignee');
+    const assigneeOpt    = assigneeSelect.selectedOptions[0];
+    const assigneeName   = assigneeOpt ? (assigneeOpt.dataset.name || '') : '';
+
+    const tags = [...document.querySelectorAll('#tagsPicker input[name="task_tags"]:checked')]
+        .map(cb => cb.value);
+
+    const payload = {
+        column_id:     colId,
+        title,
+        description:   document.getElementById('taskDesc').value.trim(),
+        priority:      document.getElementById('taskPriority').value,
+        assignee_id:   assigneeSelect.value,
+        assignee_name: assigneeName,
+        start_date:    document.getElementById('taskStart').value,
+        end_date:      document.getElementById('taskEnd').value,
+        tags,
+    };
+
+    let url, method;
+    if (taskId) {
+        url    = `/projects/${PROJECT_ID}/kanban/tasks/${taskId}`;
+        method = 'PUT';
+    } else {
+        url    = `/projects/${PROJECT_ID}/kanban/tasks`;
+        method = 'POST';
+    }
+
+    const res  = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) {
+        closeTaskModal();
+        location.reload();
+    }
+}
+
+async function deleteCurrentTask() {
+    const taskId = document.getElementById('taskId').value;
+    if (!taskId) return;
+    if (!confirm('Excluir esta tarefa?')) return;
+    await fetch(`/projects/${PROJECT_ID}/kanban/tasks/${taskId}`, { method: 'DELETE' });
+    closeTaskModal();
+    location.reload();
+}
+
+function resetTaskModal() {
+    document.getElementById('taskId').value       = '';
+    document.getElementById('taskColId').value    = '';
+    document.getElementById('taskTitle').value    = '';
+    document.getElementById('taskDesc').value     = '';
+    document.getElementById('taskPriority').value = 'media';
+    document.getElementById('taskAssignee').value = '';
+    document.getElementById('taskStart').value    = '';
+    document.getElementById('taskEnd').value      = '';
+    document.querySelectorAll('#tagsPicker input[name="task_tags"]').forEach(cb => cb.checked = false);
+}
+function closeTaskModal() { hideModal('taskModalOverlay'); }
+
+// ── Column Modal ──────────────────────────────────────────────────────────────
+document.getElementById('btnAddColumn').addEventListener('click', () => {
+    document.getElementById('colId').value   = '';
+    document.getElementById('colName').value = '';
+    document.getElementById('colColor').value = '#6366f1';
+    document.getElementById('colModalTitle').textContent = 'Nova Coluna';
+    showModal('colModalOverlay');
+});
+
+function editColumn(colId, colName, colColor) {
+    document.getElementById('colId').value    = colId;
+    document.getElementById('colName').value  = colName;
+    document.getElementById('colColor').value = colColor;
+    document.getElementById('colModalTitle').textContent = 'Editar Coluna';
+    showModal('colModalOverlay');
+}
+
+async function saveColumn() {
+    const colId   = document.getElementById('colId').value;
+    const name    = document.getElementById('colName').value.trim();
+    const color   = document.getElementById('colColor').value;
+    if (!name) { alert('Nome obrigatório.'); return; }
+
+    const payload = { name, color };
+    let url, method;
+    if (colId) {
+        url    = `/projects/${PROJECT_ID}/kanban/columns/${colId}`;
+        method = 'PUT';
+    } else {
+        url    = `/projects/${PROJECT_ID}/kanban/columns`;
+        method = 'POST';
+    }
+    const res  = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) { closeColModal(); location.reload(); }
+}
+
+async function deleteColumn(colId, colName) {
+    if (!confirm(`Excluir coluna "${colName}"? As tarefas serão movidas para a primeira coluna.`)) return;
+    await fetch(`/projects/${PROJECT_ID}/kanban/columns/${colId}`, { method: 'DELETE' });
+    location.reload();
+}
+
+function closeColModal() { hideModal('colModalOverlay'); }
+function setColColor(hex) { document.getElementById('colColor').value = hex; }
+
+// ── Tags Modal ────────────────────────────────────────────────────────────────
+document.getElementById('btnManageTags').addEventListener('click', () => {
+    showModal('tagsModalOverlay');
+});
+
+async function createTag() {
+    const name  = document.getElementById('newTagName').value.trim();
+    const color = document.getElementById('newTagColor').value;
+    if (!name) { alert('Nome obrigatório.'); return; }
+    const res  = await fetch('/kanban/tags', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, color}) });
+    const data = await res.json();
+    if (data.success) { closeTagsModal(); location.reload(); }
+}
+function closeTagsModal() { hideModal('tagsModalOverlay'); }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function updateCounts() {
+    document.querySelectorAll('.kb-cards').forEach(zone => {
+        const colId = zone.dataset.colId;
+        const count = zone.querySelectorAll('.kb-card').length;
+        const el    = document.getElementById(`count-${colId}`);
+        if (el) el.textContent = count;
+    });
+}
+
+// Close modals on overlay click
+['taskModalOverlay', 'colModalOverlay', 'tagsModalOverlay'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('active'); });
+});
+
+// Keyboard close
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        ['taskModalOverlay','colModalOverlay','tagsModalOverlay'].forEach(id => {
+            document.getElementById(id).classList.remove('active');
+        });
+    }
+});
+</script>
+
+<style>
+/* ── Kanban Layout ─────────────────────────────────────────────── */
+.kb-header {
+    margin-bottom: 24px;
+}
+.kb-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.kb-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-navy);
+    display: flex;
+    align-items: center;
+}
+.kb-subtitle {
+    color: var(--color-slate);
+    font-size: 0.9rem;
+    margin-top: 2px;
+    padding-left: 38px;
+}
+.kb-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Board scroll */
+.kb-board {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    align-items: flex-start;
+    padding-bottom: 24px;
+    min-height: calc(100vh - 220px);
+}
+.kb-board::-webkit-scrollbar { height: 6px; }
+.kb-board::-webkit-scrollbar-track { background: transparent; }
+.kb-board::-webkit-scrollbar-thumb { background: var(--color-ice); border-radius: 99px; }
+
+/* Column */
+.kb-column {
+    flex: 0 0 280px;
+    background: #f8fafc;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-ice);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 200px);
+}
+.kb-col-header {
+    padding: 14px 14px 12px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-ice);
+}
+.kb-col-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.kb-col-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.kb-col-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.kb-col-count {
+    background: var(--color-ice);
+    color: var(--color-navy);
+    border-radius: 99px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.kb-col-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.kb-column:hover .kb-col-actions { opacity: 1; }
+.kb-col-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    color: var(--color-slate);
+    display: flex;
+    transition: all 0.15s;
+}
+.kb-col-btn:hover { background: var(--color-ice); color: var(--color-navy); }
+.kb-col-btn-danger:hover { background: #fee2e2; color: #ef4444; }
+
+/* Cards zone */
+.kb-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 60px;
+}
+.kb-cards::-webkit-scrollbar { width: 4px; }
+.kb-cards::-webkit-scrollbar-thumb { background: var(--color-ice); border-radius: 99px; }
+.kb-drag-over {
+    background: rgba(82, 205, 239, 0.06);
+    border-radius: var(--radius-md);
+    outline: 2px dashed var(--color-cyan);
+}
+
+/* Card */
+.kb-card {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(3,74,93,0.08);
+    border: 1px solid var(--color-ice);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+.kb-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--color-cyan);
+}
+.kb-dragging {
+    opacity: 0.4;
+    transform: rotate(2deg);
+}
+.kb-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.kb-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid currentColor;
+    background: #f0f0f0;
+    color: #555;
+}
+.kb-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+.kb-card-desc {
+    font-size: 0.8rem;
+    color: var(--color-slate);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.kb-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.kb-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.kb-priority {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+}
+.kb-priority-alta   { background:#fee2e2; color:#dc2626; }
+.kb-priority-media  { background:#fef3c7; color:#d97706; }
+.kb-priority-baixa  { background:#d1fae5; color:#059669; }
+.kb-card-date {
+    font-size: 0.72rem;
+    color: var(--color-slate);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.kb-overdue { color: #ef4444 !important; font-weight: 600; }
+.kb-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Add task button */
+.kb-add-task {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--color-ice);
+    color: var(--color-slate);
+    font-size: 0.85rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    transition: all 0.15s;
+    font-family: inherit;
+}
+.kb-add-task:hover { background: var(--color-ice); color: var(--color-navy); }
+
+/* ── Modal ─────────────────────────────────────────────────────── */
+.kb-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(3,74,93,0.35);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.kb-modal-overlay.active { display: flex; }
+.kb-modal {
+    background: white;
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    animation: modalIn 0.2s ease;
+}
+.kb-modal-sm { max-width: 420px; }
+@keyframes modalIn {
+    from { transform: translateY(16px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.kb-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--color-ice);
+}
+.kb-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-navy);
+}
+.kb-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-slate);
+    display: flex;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s;
+}
+.kb-modal-close:hover { background: var(--color-ice); color: var(--color-navy); }
+.kb-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.kb-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-ice);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Form fields */
+.kb-field { display: flex; flex-direction: column; gap: 6px; }
+.kb-label { font-size: 0.85rem; font-weight: 600; color: var(--color-navy); }
+.kb-input {
+    padding: 10px 14px;
+    border: 2px solid var(--color-ice);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--color-navy);
+    background: white;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+.kb-input:focus { outline: none; border-color: var(--color-cyan); }
+.kb-textarea { min-height: 80px; resize: vertical; }
+.kb-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Tags picker */
+.kb-tags-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.kb-tag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 99px;
+    border: 2px solid var(--tc, #6366f1);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--tc, #6366f1);
+    background: transparent;
+    transition: all 0.15s;
+    user-select: none;
+}
+.kb-tag-checkbox input { display: none; }
+.kb-tag-checkbox:has(input:checked) {
+    background: var(--tc, #6366f1);
+    color: white;
+}
+.kb-tag-checkbox:hover { opacity: 0.85; }
+
+/* Color picker */
+.kb-color-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.kb-color-input {
+    width: 40px;
+    height: 36px;
+    border: 2px solid var(--color-ice);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    cursor: pointer;
+    background: white;
+}
+.kb-preset-colors {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.kb-preset {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+    border: 2px solid rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+}
+.kb-preset:hover { transform: scale(1.2); }
+
+/* Tags manager */
+.kb-tags-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.kb-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-ice);
+}
+.kb-tag-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.kb-tag-label { font-size: 0.88rem; font-weight: 500; color: var(--color-navy); }
+.kb-new-tag-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.kb-new-tag-row .kb-input { flex: 1; }
+</style>
+{% endblock %}

@@ -38,7 +38,7 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 # Create directories that the app expects
-RUN mkdir -p data app/static/uploads \
+RUN mkdir -p data app/static/uploads secrets \
     && chown -R app:app /app
 
 USER app
