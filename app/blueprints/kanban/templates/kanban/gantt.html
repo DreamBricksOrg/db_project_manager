@@ -1,0 +1,1015 @@
+{% extends "base.html" %}
+
+{% block title %}Gantt – {{ project.nome }}{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ──────────────────────────────────────────────── -->
+<div class="gnt-header">
+    <div class="gnt-title-row">
+        <div>
+            <h1 class="gnt-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
+                </svg>
+                Gráfico de Gantt
+            </h1>
+            <p class="gnt-subtitle">{{ project.nome }}</p>
+        </div>
+        <div class="gnt-controls">
+            <!-- View toggle -->
+            <div class="gnt-zoom-group">
+                <button class="gnt-zoom-btn active" id="viewDay" onclick="setView('day')">Dia</button>
+                <button class="gnt-zoom-btn" id="viewWeek" onclick="setView('week')">Semana</button>
+                <button class="gnt-zoom-btn" id="viewMonth" onclick="setView('month')">Mês</button>
+            </div>
+            <!-- Filter -->
+            <select class="gnt-select" id="filterPriority" onchange="render()">
+                <option value="">Todas as prioridades</option>
+                <option value="alta">🔴 Alta</option>
+                <option value="media">🟡 Média</option>
+                <option value="baixa">🟢 Baixa</option>
+            </select>
+            <select class="gnt-select" id="filterColumn" onchange="render()">
+                <option value="">Todas as colunas</option>
+                {% for col in columns %}
+                <option value="{{ col.id }}">{{ col.name }}</option>
+                {% endfor %}
+            </select>
+            <!-- Nav -->
+            <div class="gnt-nav">
+                <button class="gnt-nav-btn" onclick="shiftView(-1)" title="Anterior">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                </button>
+                <button class="gnt-nav-btn gnt-today-btn" onclick="goToday()">Hoje</button>
+                <button class="gnt-nav-btn" onclick="shiftView(1)" title="Próximo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnExport" onclick="exportGantt()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                <span id="btnExportLabel">Exportar Imagem</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Gantt Container ──────────────────────────────────────────── -->
+<div class="gnt-wrap">
+    <!-- Left: task list -->
+    <div class="gnt-sidebar" id="gntSidebar">
+        <div class="gnt-sidebar-head">
+            <span>Tarefa</span>
+        </div>
+        <div id="sidebarRows"></div>
+    </div>
+
+    <!-- Right: timeline -->
+    <div class="gnt-timeline-wrap" id="timelineWrap">
+        <div class="gnt-timeline" id="gntTimeline">
+            <div id="headerMonths" class="gnt-header-months"></div>
+            <div id="headerDays"   class="gnt-header-days"></div>
+            <div id="gntGrid"      class="gnt-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Task Tooltip ─────────────────────────────────────────────── -->
+<div class="gnt-tooltip" id="gntTooltip"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Data
+// ─────────────────────────────────────────────────────────────────────────────
+const TODAY  = "{{ today }}";
+const TASKS  = {{ tasks | tojson }};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────────────
+let viewMode   = 'day';   // 'day' | 'week' | 'month'
+let viewStart  = null;    // Date – left edge of visible window
+let COL_W      = 40;      // px per column unit
+const ROW_H    = 44;
+const SIDEBAR  = document.getElementById('gntSidebar');
+
+// Priority colours
+const PRIORITY_COLOR = {
+    alta:  { bg: '#fef2f2', bar: '#ef4444' },
+    media: { bg: '#fefce8', bar: '#f59e0b' },
+    baixa: { bg: '#f0fdf4', bar: '#10b981' },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Date utilities
+// ─────────────────────────────────────────────────────────────────────────────
+function parseDate(s) {
+    if (!s) return null;
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d);
+}
+function fmtIso(d)  { return d.toISOString().slice(0,10); }
+function fmtShort(d){ return d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}); }
+function fmtFull(d) { return d.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'}); }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function addMonths(d, n){ const r = new Date(d); r.setMonth(r.getMonth()+n); return r; }
+function diffDays(a, b) { return Math.round((b-a)/86400000); }
+function startOfWeek(d) { const r = new Date(d); r.setDate(r.getDate()-r.getDay()); return r; }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d)  { return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// View helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function visibleDates() {
+    const wrapW = document.getElementById('timelineWrap').clientWidth || 900;
+    let units;
+    if (viewMode === 'day')   units = Math.ceil(wrapW / COL_W);
+    if (viewMode === 'week')  units = Math.ceil(wrapW / COL_W);
+    if (viewMode === 'month') units = Math.ceil(wrapW / COL_W);
+    const dates = [];
+    for (let i = 0; i < units; i++) {
+        if (viewMode === 'day')   dates.push(addDays(viewStart, i));
+        if (viewMode === 'week')  dates.push(addDays(viewStart, i*7));
+        if (viewMode === 'month') dates.push(addMonths(viewStart, i));
+    }
+    return dates;
+}
+
+function dateToX(d) {
+    if (viewMode === 'day') {
+        return diffDays(viewStart, d) * COL_W;
+    }
+    if (viewMode === 'week') {
+        return diffDays(startOfWeek(viewStart), startOfWeek(d)) / 7 * COL_W;
+    }
+    if (viewMode === 'month') {
+        const months = (d.getFullYear()-viewStart.getFullYear())*12 + (d.getMonth()-viewStart.getMonth());
+        const dayFrac = (d.getDate()-1) / endOfMonth(d).getDate();
+        return (months + dayFrac) * COL_W;
+    }
+}
+
+function totalWidth() {
+    const dates = visibleDates();
+    return dates.length * COL_W + COL_W; // +1 buffer
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────────────────────────────────────
+function filteredTasks() {
+    const pri = document.getElementById('filterPriority').value;
+    const col = document.getElementById('filterColumn').value;
+    return TASKS.filter(t => {
+        if (pri && t.priority !== pri) return false;
+        if (col && t.column_id  !== col) return false;
+        return true;
+    });
+}
+
+function render() {
+    const tasks  = filteredTasks();
+    const dates  = visibleDates();
+    const todayD = parseDate(TODAY);
+    const W      = totalWidth();
+
+    // ── Sidebar rows ───────────────────────────────────────────────
+    const sidebarEl = document.getElementById('sidebarRows');
+    sidebarEl.innerHTML = '';
+    tasks.forEach((t, i) => {
+        const pc = PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.media;
+        const row = document.createElement('div');
+        row.className = 'gnt-srow';
+        row.style.background = i%2===0 ? 'white' : '#f8fafc';
+        const avatar = t.assignee_name
+            ? `<span class="gnt-avatar" title="${t.assignee_name}">${t.assignee_name[0].toUpperCase()}</span>`
+            : '';
+        row.innerHTML = `
+            <span class="gnt-priority-dot" style="background:${pc.bar}" title="${t.priority}"></span>
+            <div class="gnt-srow-info">
+                <span class="gnt-srow-title">${t.title}</span>
+                <span class="gnt-srow-col" style="color:${t.column_color}">${t.column_name}</span>
+            </div>
+            ${avatar}
+        `;
+        sidebarEl.appendChild(row);
+    });
+
+    // ── Header months ──────────────────────────────────────────────
+    const hMonths = document.getElementById('headerMonths');
+    hMonths.innerHTML = '';
+    hMonths.style.width = W + 'px';
+
+    if (viewMode === 'day') {
+        // Group days by month
+        let curMonth = null, curEl = null, curStart = 0;
+        dates.forEach((d, i) => {
+            const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+            if (label !== curMonth) {
+                if (curEl) curEl.style.width = (i*COL_W - curStart) + 'px';
+                curEl = document.createElement('div');
+                curEl.className = 'gnt-month-cell';
+                curEl.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+                curEl.style.left = (i*COL_W)+'px';
+                hMonths.appendChild(curEl);
+                curMonth = label;
+                curStart = i*COL_W;
+            }
+        });
+        if (curEl) curEl.style.width = (W - curStart)+'px';
+    } else if (viewMode === 'week') {
+        let curMonth = null, curEl = null, curStart = 0;
+        dates.forEach((d, i) => {
+            const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+            if (label !== curMonth) {
+                if (curEl) curEl.style.width = (i*COL_W - curStart) + 'px';
+                curEl = document.createElement('div');
+                curEl.className = 'gnt-month-cell';
+                curEl.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+                curEl.style.left = (i*COL_W)+'px';
+                hMonths.appendChild(curEl);
+                curMonth = label;
+                curStart = i*COL_W;
+            }
+        });
+        if (curEl) curEl.style.width = (W - curStart)+'px';
+    } else {
+        // month view — year grouping
+        let curYear = null, curEl = null, curStart = 0;
+        dates.forEach((d, i) => {
+            const y = d.getFullYear().toString();
+            if (y !== curYear) {
+                if (curEl) curEl.style.width = (i*COL_W - curStart) + 'px';
+                curEl = document.createElement('div');
+                curEl.className = 'gnt-month-cell';
+                curEl.textContent = y;
+                curEl.style.left = (i*COL_W)+'px';
+                hMonths.appendChild(curEl);
+                curYear = y;
+                curStart = i*COL_W;
+            }
+        });
+        if (curEl) curEl.style.width = (W - curStart)+'px';
+    }
+
+    // ── Header days ────────────────────────────────────────────────
+    const hDays = document.getElementById('headerDays');
+    hDays.innerHTML = '';
+    hDays.style.width = W + 'px';
+
+    dates.forEach((d, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'gnt-day-cell';
+        cell.style.left  = (i*COL_W)+'px';
+        cell.style.width = COL_W+'px';
+        const isToday = fmtIso(d) === TODAY;
+        if (isToday) cell.classList.add('gnt-today-col');
+
+        if (viewMode === 'day') {
+            const dom = document.createElement('span');
+            dom.className = 'gnt-day-num' + (isToday ? ' active' : '');
+            dom.textContent = d.getDate();
+            const dow = document.createElement('span');
+            dow.className = 'gnt-day-dow';
+            dow.textContent = d.toLocaleDateString('pt-BR', {weekday:'short'}).slice(0,3);
+            if (d.getDay()===0||d.getDay()===6) cell.classList.add('gnt-weekend');
+            cell.appendChild(dow);
+            cell.appendChild(dom);
+        } else if (viewMode === 'week') {
+            const end = addDays(d, 6);
+            cell.innerHTML = `<span class="gnt-day-dow">${fmtShort(d)}</span><span class="gnt-day-num" style="font-size:0.7rem">${fmtShort(end)}</span>`;
+        } else {
+            cell.innerHTML = `<span class="gnt-day-num">${d.toLocaleDateString('pt-BR',{month:'short'})}</span>`;
+        }
+        hDays.appendChild(cell);
+    });
+
+    // ── Grid ───────────────────────────────────────────────────────
+    const grid = document.getElementById('gntGrid');
+    grid.innerHTML = '';
+    grid.style.width  = W + 'px';
+    grid.style.height = Math.max(tasks.length * ROW_H, 120) + 'px';
+
+    // Background stripes
+    dates.forEach((d, i) => {
+        const stripe = document.createElement('div');
+        stripe.className = 'gnt-stripe';
+        stripe.style.left  = (i*COL_W)+'px';
+        stripe.style.width = COL_W+'px';
+        stripe.style.height = '100%';
+        const isWeekend = d.getDay()===0 || d.getDay()===6;
+        const isTodayStripe = viewMode==='day' && fmtIso(d)===TODAY;
+        if (isTodayStripe) stripe.classList.add('gnt-today-stripe');
+        else if (isWeekend && viewMode==='day') stripe.classList.add('gnt-weekend-stripe');
+        grid.appendChild(stripe);
+    });
+
+    // Today marker line
+    const tx = dateToX(todayD);
+    if (tx >= 0 && tx <= W) {
+        const marker = document.createElement('div');
+        marker.className = 'gnt-today-marker';
+        marker.style.left = tx + 'px';
+        marker.style.height = '100%';
+        grid.appendChild(marker);
+    }
+
+    // Task bars
+    tasks.forEach((t, i) => {
+        const y = i * ROW_H;
+
+        // Row background
+        const rowBg = document.createElement('div');
+        rowBg.className = 'gnt-row-bg';
+        rowBg.style.top    = y+'px';
+        rowBg.style.width  = W+'px';
+        rowBg.style.height = ROW_H+'px';
+        rowBg.style.background = i%2===0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.6)';
+        grid.appendChild(rowBg);
+
+        if (!t.start_date || !t.end_date) {
+            // No-date task: show diamond milestone
+            const mid = dateToX(todayD);
+            const diamond = document.createElement('div');
+            diamond.className = 'gnt-no-date';
+            diamond.style.top  = (y + ROW_H/2 - 10) + 'px';
+            diamond.style.left = '8px';
+            diamond.textContent = '— sem data —';
+            grid.appendChild(diamond);
+            return;
+        }
+
+        const startD = parseDate(t.start_date);
+        const endD   = parseDate(t.end_date);
+        if (!startD || !endD) return;
+
+        const x1 = dateToX(startD);
+        let   x2 = dateToX(endD);
+
+        // Minimum 1 unit width
+        if (viewMode==='day')   x2 = Math.max(x2, x1+COL_W);
+        if (viewMode==='week')  x2 = Math.max(x2, x1+COL_W);
+        if (viewMode==='month') x2 = Math.max(x2, x1+COL_W/2);
+
+        const bw = x2 - x1;
+        if (bw <= 0) return;
+
+        const pc       = PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.media;
+        const isOverdue = t.end_date < TODAY && t.column_name !== 'Concluído';
+
+        const bar = document.createElement('div');
+        bar.className = 'gnt-bar';
+        bar.style.left    = x1 + 'px';
+        bar.style.top     = (y + 8) + 'px';
+        bar.style.width   = bw + 'px';
+        bar.style.height  = (ROW_H - 16) + 'px';
+        bar.style.background = isOverdue
+            ? 'linear-gradient(135deg,#ef4444,#dc2626)'
+            : `linear-gradient(135deg, ${pc.bar}dd, ${pc.bar})`;
+        bar.style.borderColor = isOverdue ? '#dc2626' : pc.bar;
+        if (isOverdue) bar.classList.add('gnt-bar-overdue');
+
+        // Label inside bar
+        const label = document.createElement('span');
+        label.className = 'gnt-bar-label';
+        label.textContent = t.title;
+        bar.appendChild(label);
+
+        // Progress dot for today
+        if (todayD >= startD && todayD <= endD) {
+            const progFrac = diffDays(startD, todayD) / Math.max(diffDays(startD, endD), 1);
+            const progW = bw * progFrac;
+            const prog = document.createElement('div');
+            prog.className = 'gnt-bar-progress';
+            prog.style.width = progW + 'px';
+            bar.appendChild(prog);
+        }
+
+        // Tooltip
+        bar.addEventListener('mouseenter', (e) => showTooltip(e, t));
+        bar.addEventListener('mousemove',  (e) => moveTooltip(e));
+        bar.addEventListener('mouseleave', hideTooltip);
+
+        grid.appendChild(bar);
+    });
+
+    // Sync scroll
+    syncSidebarHeight(tasks.length);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tooltip
+// ─────────────────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById('gntTooltip');
+
+function showTooltip(e, t) {
+    const pc = PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.media;
+    const priLabel = {alta:'🔴 Alta', media:'🟡 Média', baixa:'🟢 Baixa'}[t.priority] || t.priority;
+    const dur = (t.start_date && t.end_date)
+        ? diffDays(parseDate(t.start_date), parseDate(t.end_date)) + 1
+        : null;
+    tooltip.innerHTML = `
+        <div class="gnt-tt-title">${t.title}</div>
+        <div class="gnt-tt-row"><span style="color:${t.column_color}">●</span> ${t.column_name}</div>
+        <div class="gnt-tt-row"><span>${priLabel}</span></div>
+        ${t.assignee_name ? `<div class="gnt-tt-row">👤 ${t.assignee_name}</div>` : ''}
+        ${t.start_date ? `<div class="gnt-tt-row">📅 ${t.start_date} → ${t.end_date}</div>` : ''}
+        ${dur ? `<div class="gnt-tt-row">⏱ ${dur} dia${dur!==1?'s':''}</div>` : ''}
+        ${t.tags.length ? `<div class="gnt-tt-tags">${t.tags.map(tg=>`<span class="gnt-tt-tag">${tg}</span>`).join('')}</div>` : ''}
+        ${t.description ? `<div class="gnt-tt-desc">${t.description.slice(0,120)}${t.description.length>120?'…':''}</div>` : ''}
+    `;
+    tooltip.style.display = 'block';
+    moveTooltip(e);
+}
+function moveTooltip(e) {
+    const x = e.clientX + 14;
+    const y = e.clientY + 14;
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+    tooltip.style.left = (x + tw > window.innerWidth  ? x - tw - 28 : x) + 'px';
+    tooltip.style.top  = (y + th > window.innerHeight ? y - th - 28 : y) + 'px';
+}
+function hideTooltip() { tooltip.style.display = 'none'; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// View controls
+// ─────────────────────────────────────────────────────────────────────────────
+function setView(mode) {
+    viewMode = mode;
+    COL_W = mode==='day' ? 40 : mode==='week' ? 90 : 60;
+    ['day','week','month'].forEach(v => {
+        document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).classList.toggle('active', v===mode);
+    });
+    initViewStart();
+    render();
+}
+
+function initViewStart() {
+    const today = parseDate(TODAY);
+    if (viewMode==='day')   viewStart = addDays(today, -5);
+    if (viewMode==='week')  viewStart = startOfWeek(addDays(today, -14));
+    if (viewMode==='month') viewStart = startOfMonth(addMonths(today, -2));
+}
+
+function shiftView(dir) {
+    if (viewMode==='day')   viewStart = addDays(viewStart, dir*14);
+    if (viewMode==='week')  viewStart = addDays(viewStart, dir*7*4);
+    if (viewMode==='month') viewStart = addMonths(viewStart, dir*3);
+    render();
+}
+
+function goToday() {
+    initViewStart();
+    render();
+    // Scroll today into view
+    setTimeout(() => {
+        const today  = parseDate(TODAY);
+        const tx     = dateToX(today);
+        const wrap   = document.getElementById('timelineWrap');
+        wrap.scrollLeft = Math.max(0, tx - wrap.clientWidth/2);
+    }, 50);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sync
+// ─────────────────────────────────────────────────────────────────────────────
+function syncSidebarHeight(n) {
+    const h = Math.max(n*ROW_H, 120) + 'px';
+    document.getElementById('sidebarRows').style.minHeight = h;
+}
+
+// Sync sidebar scroll with timeline vertical scroll
+document.getElementById('timelineWrap').addEventListener('scroll', function() {
+    SIDEBAR.querySelector('#sidebarRows').scrollTop = this.scrollTop;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Export as full image
+// ─────────────────────────────────────────────────────────────────────────────
+async function exportGantt() {
+    const btn   = document.getElementById('btnExport');
+    const label = document.getElementById('btnExportLabel');
+    btn.disabled = true;
+    label.textContent = 'Gerando...';
+
+    // Load html2canvas on-demand
+    if (!window.html2canvas) {
+        await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+        });
+    }
+
+    // ── 1. Calculate full date range across ALL tasks ───────────────
+    const tasksWithDates = TASKS.filter(t => t.start_date && t.end_date);
+    let rangeStart, rangeEnd;
+    if (tasksWithDates.length) {
+        rangeStart = tasksWithDates.reduce((m,t) => t.start_date < m ? t.start_date : m, tasksWithDates[0].start_date);
+        rangeEnd   = tasksWithDates.reduce((m,t) => t.end_date   > m ? t.end_date   : m, tasksWithDates[0].end_date);
+    } else {
+        rangeStart = TODAY;
+        rangeEnd   = TODAY;
+    }
+
+    // ── 2. Save current view state ──────────────────────────────────
+    const savedStart = viewStart;
+    const savedMode  = viewMode;
+    const savedColW  = COL_W;
+
+    // ── 3. Switch to export view: day mode, padding 7 days ──────────
+    viewMode  = 'day';
+    COL_W     = 32;
+    viewStart = addDays(parseDate(rangeStart), -7);
+    const exportEnd = addDays(parseDate(rangeEnd), 7);
+    const totalDays = diffDays(viewStart, exportEnd) + 1;
+
+    // Override visibleDates to return ALL days in range
+    const _origVisible = visibleDates;
+    window.visibleDates = () => {
+        const dates = [];
+        for (let i = 0; i < totalDays; i++) dates.push(addDays(viewStart, i));
+        return dates;
+    };
+
+    // ── 4. Expand gnt-wrap to show full content ─────────────────────
+    const wrap       = document.getElementById('gntSidebar').parentElement; // .gnt-wrap
+    const timeWrap   = document.getElementById('timelineWrap');
+    const sbarRows   = document.getElementById('sidebarRows');
+    const tasks      = filteredTasks();
+
+    const prevWrapH       = wrap.style.height;
+    const prevWrapOverflow = wrap.style.overflow;
+    const prevTWOverflow  = timeWrap.style.overflow;
+    const prevSBOverflow  = document.getElementById('gntSidebar').style.overflow;
+
+    const fullH = Math.max(tasks.length * ROW_H, 120) + 64 + 36 + 28 + 8; // grid + headers
+    wrap.style.height   = fullH + 'px';
+    wrap.style.overflow = 'visible';
+    timeWrap.style.overflow = 'visible';
+    document.getElementById('gntSidebar').style.overflow = 'visible';
+    sbarRows.style.overflow = 'visible';
+
+    render();
+
+    // Brief wait for DOM paint
+    await new Promise(r => setTimeout(r, 120));
+
+    // ── 5. Capture ──────────────────────────────────────────────────
+    try {
+        const canvas = await html2canvas(wrap, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth:  wrap.scrollWidth  + 240,
+            windowHeight: wrap.scrollHeight + 64,
+            width:  wrap.scrollWidth,
+            height: wrap.scrollHeight,
+        });
+
+        const link  = document.createElement('a');
+        const proj  = "{{ project.nome }}".replace(/[^a-zA-Z0-9]/g,'-');
+        link.download = `gantt-${proj}-${TODAY}.png`;
+        link.href      = canvas.toDataURL('image/png');
+        link.click();
+    } catch(e) {
+        console.error('Export error:', e);
+        alert('Erro ao exportar: ' + e.message);
+    }
+
+    // ── 6. Restore original view ────────────────────────────────────
+    window.visibleDates = _origVisible;
+    viewMode  = savedMode;
+    COL_W     = savedColW;
+    viewStart = savedStart;
+    wrap.style.height   = prevWrapH;
+    wrap.style.overflow = prevWrapOverflow;
+    timeWrap.style.overflow = prevTWOverflow;
+    document.getElementById('gntSidebar').style.overflow = prevSBOverflow;
+    sbarRows.style.overflow = '';
+    render();
+
+    btn.disabled = false;
+    label.textContent = 'Exportar Imagem';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────────────────
+initViewStart();
+render();
+goToday();
+
+window.addEventListener('resize', render);
+</script>
+
+<style>
+/* ── Layout ──────────────────────────────────────────────────────── */
+.gnt-header { margin-bottom: 20px; }
+
+.gnt-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.gnt-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-navy);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+.gnt-title svg { width: 26px; height: 26px; flex-shrink: 0; color: var(--color-teal); }
+.gnt-subtitle { color: var(--color-slate); font-size: 0.9rem; margin: 2px 0 0 36px; }
+
+.gnt-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Zoom buttons */
+.gnt-zoom-group {
+    display: flex;
+    border: 1px solid var(--color-ice);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+.gnt-zoom-btn {
+    background: white;
+    border: none;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--color-slate);
+    border-right: 1px solid var(--color-ice);
+    font-family: inherit;
+    transition: all 0.15s;
+}
+.gnt-zoom-btn:last-child { border-right: none; }
+.gnt-zoom-btn:hover  { background: var(--color-ice); color: var(--color-navy); }
+.gnt-zoom-btn.active { background: var(--color-teal); color: white; }
+
+/* Select */
+.gnt-select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-ice);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    font-family: inherit;
+    color: var(--color-navy);
+    background: white;
+    cursor: pointer;
+}
+
+/* Nav */
+.gnt-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.gnt-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border: 1px solid var(--color-ice);
+    border-radius: var(--radius-md);
+    background: white;
+    cursor: pointer;
+    color: var(--color-navy);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.gnt-nav-btn:hover { background: var(--color-ice); }
+.gnt-today-btn { color: var(--color-teal); }
+
+/* ── Main wrap ───────────────────────────────────────────────────── */
+.gnt-wrap {
+    display: flex;
+    border: 1px solid var(--color-ice);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: white;
+    box-shadow: var(--shadow-sm);
+    height: calc(100vh - 220px);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+.gnt-sidebar {
+    flex: 0 0 240px;
+    border-right: 1px solid var(--color-ice);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.gnt-sidebar-head {
+    height: 64px;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px 16px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-slate);
+    border-bottom: 1px solid var(--color-ice);
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+#sidebarRows {
+    flex: 1;
+    overflow: hidden; /* scrolled by timeline */
+}
+.gnt-srow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    height: 44px;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.gnt-priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.gnt-srow-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.gnt-srow-title {
+    font-weight: 600;
+    color: var(--color-navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.83rem;
+}
+.gnt-srow-col {
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+.gnt-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ── Timeline wrap ───────────────────────────────────────────────── */
+.gnt-timeline-wrap {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+.gnt-timeline {
+    position: relative;
+    min-width: 100%;
+}
+
+/* ── Headers ─────────────────────────────────────────────────────── */
+.gnt-header-months {
+    height: 28px;
+    position: relative;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--color-ice);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.gnt-header-days {
+    height: 36px;
+    position: relative;
+    background: white;
+    border-bottom: 2px solid var(--color-ice);
+    position: sticky;
+    top: 28px;
+    z-index: 10;
+}
+.gnt-month-cell {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-slate);
+    border-left: 1px solid var(--color-ice);
+    overflow: hidden;
+    white-space: nowrap;
+}
+.gnt-day-cell {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--color-slate);
+    border-left: 1px solid #f1f5f9;
+    overflow: hidden;
+}
+.gnt-day-cell.gnt-weekend { background: #fafafa; }
+.gnt-day-cell.gnt-today-col { background: rgba(20,184,166,0.06); }
+.gnt-day-num {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-navy);
+    line-height: 1;
+}
+.gnt-day-num.active {
+    background: var(--color-teal);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+}
+.gnt-day-dow {
+    font-size: 0.65rem;
+    color: var(--color-slate);
+    line-height: 1;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ── Grid ────────────────────────────────────────────────────────── */
+.gnt-grid {
+    position: relative;
+    overflow: hidden;
+}
+.gnt-stripe {
+    position: absolute;
+    top: 0;
+    border-left: 1px solid #f1f5f9;
+    pointer-events: none;
+}
+.gnt-weekend-stripe { background: rgba(0,0,0,0.018); }
+.gnt-today-stripe   { background: rgba(20,184,166,0.04); }
+.gnt-row-bg {
+    position: absolute;
+    left: 0;
+    pointer-events: none;
+}
+.gnt-today-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    background: var(--color-teal);
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 5;
+}
+.gnt-today-marker::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-teal);
+}
+
+/* ── Task bars ───────────────────────────────────────────────────── */
+.gnt-bar {
+    position: absolute;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.12s, box-shadow 0.12s;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+}
+.gnt-bar:hover {
+    transform: scaleY(1.08);
+    box-shadow: 0 4px 16px rgba(3,74,93,0.18);
+    z-index: 6;
+}
+.gnt-bar-overdue {
+    animation: pulse-overdue 2s infinite;
+}
+@keyframes pulse-overdue {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.75; }
+}
+.gnt-bar-label {
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    pointer-events: none;
+}
+.gnt-bar-progress {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: rgba(255,255,255,0.2);
+    pointer-events: none;
+    border-radius: 6px 0 0 6px;
+}
+.gnt-no-date {
+    position: absolute;
+    left: 0;
+    font-size: 0.72rem;
+    color: var(--color-slate);
+    display: flex;
+    align-items: center;
+    height: 28px;
+    font-style: italic;
+    pointer-events: none;
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────── */
+.gnt-tooltip {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--color-navy);
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    font-size: 0.82rem;
+    max-width: 280px;
+    box-shadow: 0 8px 32px rgba(3,74,93,0.35);
+    pointer-events: none;
+    line-height: 1.5;
+}
+.gnt-tt-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 6px;
+}
+.gnt-tt-row { margin-bottom: 3px; opacity: 0.9; }
+.gnt-tt-desc {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 6px;
+}
+.gnt-tt-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+.gnt-tt-tag {
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    padding: 1px 8px;
+    font-size: 0.7rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    .gnt-sidebar { flex: 0 0 160px; }
+    .gnt-controls { gap: 6px; }
+    .gnt-title { font-size: 1.1rem; }
+}
+</style>
+{% endblock %}

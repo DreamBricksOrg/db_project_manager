@@ -214,3 +214,54 @@ def create_tag():
         'color': data.get('color', '#6366f1'),
     })
     return jsonify({'success': True, 'tag': tag})
+
+
+# ── Gantt View ─────────────────────────────────────────────────────────────────
+@kanban_bp.route('/projects/<project_id>/gantt')
+@login_required
+def gantt(project_id):
+    project = projects_repo.get_by_id(project_id)
+    if not project:
+        from flask import flash, redirect, url_for
+        flash('Projeto não encontrado.', 'error')
+        return redirect(url_for('projects.list_projects'))
+
+    _ensure_defaults(project_id)
+
+    columns = sorted(
+        kanban_columns_repo.get_by_project(project_id),
+        key=lambda c: c.get('order', 0)
+    )
+    col_map = {col['id']: col for col in columns}
+
+    tasks_raw = kanban_tasks_repo.get_by_project(project_id)
+
+    # Build tasks list with date info
+    tasks = []
+    for t in tasks_raw:
+        start = t.get('start_date', '') or ''
+        end   = t.get('end_date', '')   or ''
+        tasks.append({
+            'id':            t.get('id', ''),
+            'title':         t.get('title', ''),
+            'description':   t.get('description', ''),
+            'priority':      t.get('priority', 'media'),
+            'assignee_name': t.get('assignee_name', ''),
+            'start_date':    start,
+            'end_date':      end,
+            'tags':          t.get('tags', []),
+            'column_id':     t.get('column_id', ''),
+            'column_name':   col_map.get(t.get('column_id', ''), {}).get('name', '—'),
+            'column_color':  col_map.get(t.get('column_id', ''), {}).get('color', '#94a3b8'),
+        })
+
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    return render_template(
+        'kanban/gantt.html',
+        project=project,
+        columns=columns,
+        tasks=tasks,
+        today=today,
+    )
+
