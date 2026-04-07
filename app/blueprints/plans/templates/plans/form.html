@@ -143,25 +143,16 @@
             <h2 class="card-title">Equipe de Instalação</h2>
         </div>
 
-        <div class="form-group autocomplete-wrapper">
-            <label class="form-label" for="installer_input">Adicionar Instalador (Cadastrado)</label>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="installer_input" class="form-input" placeholder="Digite o nome do instalador"
-                    hx-get="{{ url_for('api.autocomplete_installers') }}" hx-trigger="keyup changed delay:300ms"
-                    hx-target="#installer-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
-            </div>
-            <div id="installer-results" class="autocomplete-results" style="display: none;"></div>
-        </div>
-
-        <div class="tag-list" id="installers-list">
-            {% set selected_installers = plan.instaladores if plan and plan.instaladores else [] %}
-            {% for inst_id in selected_installers %}
-            <div class="tag" data-id="{{ inst_id }}">
-                <span class="installer-name">Carregando...</span>
-                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-                <input type="hidden" name="instaladores" value="{{ inst_id }}">
-            </div>
-            {% endfor %}
+        <div class="form-group">
+            <label class="form-label" for="instaladores">Adicionar Instalador (Cadastrado)</label>
+            <select id="instaladores" name="instaladores" class="form-input tom-select" multiple placeholder="Selecione a equipe de instalação...">
+                {% set selected_installers = plan.instaladores if plan and plan.instaladores else [] %}
+                {% for installer in installers %}
+                    <option value="{{ installer.id }}" {% if installer.id in selected_installers %}selected{% endif %}>
+                        {{ installer.nome }} ({{ installer.especialidade or 'Geral' }})
+                    </option>
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -198,26 +189,22 @@
             <h2 class="card-title">Materiais Principais</h2>
         </div>
 
-        <div class="form-group autocomplete-wrapper">
-            <label class="form-label" for="material_input">Adicionar Material</label>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="material_input" class="form-input" placeholder="Digite o nome do material"
-                    hx-get="{{ url_for('api.autocomplete_materials') }}" hx-trigger="keyup changed delay:300ms"
-                    hx-target="#material-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
-                <button type="button" class="btn btn-secondary" onclick="addMaterial()">Adicionar</button>
-            </div>
-            <div id="material-results" class="autocomplete-results" style="display: none;"></div>
-        </div>
-
-        <div class="tag-list" id="materials-list">
-            {% set plan_materials = plan.materiais if plan and plan.materiais else [] %}
-            {% for material in plan_materials %}
-            <div class="tag">
-                <span>{{ material }}</span>
-                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-                <input type="hidden" name="materiais[]" value="{{ material }}">
-            </div>
-            {% endfor %}
+        <div class="form-group">
+            <label class="form-label" for="materiais">Adicionar Material</label>
+            <select id="materiais" name="materiais[]" class="form-input tom-select-create" multiple placeholder="Selecione ou digite um novo material...">
+                {% set plan_materials = plan.materiais if plan and plan.materiais else [] %}
+                {% for material in materials %}
+                    <option value="{{ material.nome }}" {% if material.nome in plan_materials %}selected{% endif %}>
+                        {{ material.nome }}
+                    </option>
+                {% endfor %}
+                {# Ensure tags that are not in DB yet are also rendered as selected #}
+                {% for mat in plan_materials %}
+                    {% if mat not in materials|map(attribute='nome') %}
+                        <option value="{{ mat }}" selected>{{ mat }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -227,31 +214,21 @@
             <h2 class="card-title">Ferramentas Necessárias</h2>
         </div>
 
-        <div class="form-group autocomplete-wrapper">
-            <label class="form-label" for="tool_input">Adicionar Ferramenta</label>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="tool_input" class="form-input" placeholder="Digite o nome da ferramenta" 
-                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addTool();}"
-                       hx-get="{{ url_for('api.autocomplete_tools') }}" 
-                       hx-trigger="keyup changed delay:300ms"
-                       hx-target="#tool-results" 
-                       hx-swap="innerHTML" 
-                       hx-vals='{"q": this.value}' 
-                       autocomplete="off">
-                <button type="button" class="btn btn-secondary" onclick="addTool()">Adicionar</button>
-            </div>
-            <div id="tool-results" class="autocomplete-results" style="display: none;"></div>
-        </div>
-
-        <div class="tag-list" id="tools-list">
-            {% set plan_tools = plan.ferramentas if plan and plan.ferramentas else [] %}
-            {% for tool in plan_tools %}
-            <div class="tag">
-                <span>{{ tool }}</span>
-                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-                <input type="hidden" name="ferramentas[]" value="{{ tool }}">
-            </div>
-            {% endfor %}
+        <div class="form-group">
+            <label class="form-label" for="tools-select">Adicionar Ferramenta</label>
+            <select id="tools-select" name="ferramentas[]" class="form-input tom-select-create" multiple placeholder="Selecione ou digite uma nova ferramenta...">
+                {% set plan_tools = plan.ferramentas if plan and plan.ferramentas else [] %}
+                {% for tool in tools %}
+                    <option value="{{ tool.nome }}" {% if tool.nome in plan_tools %}selected{% endif %}>
+                        {{ tool.nome }}
+                    </option>
+                {% endfor %}
+                {% for tool in plan_tools %}
+                    {% if tool not in tools|map(attribute='nome') %}
+                        <option value="{{ tool }}" selected>{{ tool }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -261,31 +238,21 @@
             <h2 class="card-title">Equipamentos</h2>
         </div>
 
-        <div class="form-group autocomplete-wrapper">
-            <label class="form-label" for="equipment_input">Adicionar Equipamento</label>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="equipment_input" class="form-input" placeholder="Digite o nome do equipamento"
-                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addEquipment();}"
-                       hx-get="{{ url_for('api.autocomplete_equipment') }}" 
-                       hx-trigger="keyup changed delay:300ms"
-                       hx-target="#equipment-results" 
-                       hx-swap="innerHTML" 
-                       hx-vals='{"q": this.value}' 
-                       autocomplete="off">
-                <button type="button" class="btn btn-secondary" onclick="addEquipment()">Adicionar</button>
-            </div>
-            <div id="equipment-results" class="autocomplete-results" style="display: none;"></div>
-        </div>
-
-        <div class="tag-list" id="equipment-list">
-            {% set plan_equipment = plan.equipamentos if plan and plan.equipamentos else [] %}
-            {% for eq in plan_equipment %}
-            <div class="tag">
-                <span>{{ eq }}</span>
-                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-                <input type="hidden" name="equipamentos[]" value="{{ eq }}">
-            </div>
-            {% endfor %}
+        <div class="form-group">
+            <label class="form-label" for="equipment-select">Adicionar Equipamento</label>
+            <select id="equipment-select" name="equipamentos[]" class="form-input tom-select-create" multiple placeholder="Selecione ou digite um novo equipamento...">
+                {% set plan_equipment = plan.equipamentos if plan and plan.equipamentos else [] %}
+                {% for eq in equipment %}
+                    <option value="{{ eq.nome }}" {% if eq.nome in plan_equipment %}selected{% endif %}>
+                        {{ eq.nome }}
+                    </option>
+                {% endfor %}
+                {% for eq in plan_equipment %}
+                    {% if eq not in equipment|map(attribute='nome') %}
+                        <option value="{{ eq }}" selected>{{ eq }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -411,30 +378,6 @@
     function selectAutocomplete(element, targetInput, value) {
         const input = document.getElementById(targetInput);
 
-        // Handle installer selection (add to list instead of filling input)
-        if (targetInput === 'installer_input') {
-            addInstaller(value, element.textContent.trim());
-            document.getElementById('installer_input').value = '';
-            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
-            return;
-        }
-
-        // Handle tool selection
-        if (targetInput === 'tool_input') {
-            document.getElementById('tool_input').value = value;
-            addTool();
-            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
-            return;
-        }
-
-        // Handle equipment selection
-        if (targetInput === 'equipment_input') {
-            document.getElementById('equipment_input').value = value;
-            addEquipment();
-            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
-            return;
-        }
-
         if (input) {
             input.value = value;
 
@@ -453,43 +396,22 @@
         document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
     }
 
-    // Add installer to the list
-    function addInstaller(id, label) {
-        const list = document.getElementById('installers-list');
+    // Initialize Tom Select
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.tom-select').forEach(function(el) {
+            new TomSelect(el, {
+                plugins: ['remove_button'],
+                maxOptions: 50
+            });
+        });
 
-        // Check if already added
-        if (list.querySelector(`[data-id="${id}"]`)) {
-            return; // Already in list
-        }
-
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.dataset.id = id;
-        tag.innerHTML = `
-            <span>${label}</span>
-            <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-            <input type="hidden" name="instaladores" value="${id}">
-        `;
-        list.appendChild(tag);
-    }
-
-    // Load installer names for edit mode
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('#installers-list .tag[data-id]').forEach(tag => {
-            const id = tag.dataset.id;
-            if (id) {
-                fetch(`{{ url_for('api.get_installer', id='PLACEHOLDER') }}`.replace('PLACEHOLDER', id))
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.nome) {
-                            tag.querySelector('.installer-name').textContent =
-                                `${data.nome} (${data.especialidade || 'Geral'})`;
-                        }
-                    })
-                    .catch(() => {
-                        tag.querySelector('.installer-name').textContent = 'Instalador não encontrado';
-                    });
-            }
+        document.querySelectorAll('.tom-select-create').forEach(function(el) {
+            new TomSelect(el, {
+                plugins: ['remove_button'],
+                maxOptions: 50,
+                create: true,
+                persist: false
+            });
         });
     });
 
@@ -523,76 +445,6 @@
     `;
         container.appendChild(row);
     }
-
-    // Add material
-    function addMaterial() {
-        const input = document.getElementById('material_input');
-        const value = input.value.trim();
-        if (!value) return;
-
-        const list = document.getElementById('materials-list');
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.innerHTML = `
-        <span>${value}</span>
-        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-        <input type="hidden" name="materiais[]" value="${value}">
-    `;
-        list.appendChild(tag);
-        input.value = '';
-    }
-
-    // Handle Enter key on material input
-    document.getElementById('material_input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addMaterial();
-        }
-    });
-
-    // Add tool
-    function addTool() {
-        const input = document.getElementById('tool_input');
-        const value = input.value.trim();
-        if (!value) return;
-
-        const list = document.getElementById('tools-list');
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.innerHTML = `
-        <span>${value}</span>
-        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-        <input type="hidden" name="ferramentas[]" value="${value}">
-    `;
-        list.appendChild(tag);
-        input.value = '';
-    }
-
-    // Add equipment
-    function addEquipment() {
-        const input = document.getElementById('equipment_input');
-        const value = input.value.trim();
-        if (!value) return;
-
-        const list = document.getElementById('equipment-list');
-        const tag = document.createElement('div');
-        tag.className = 'tag';
-        tag.innerHTML = `
-        <span>${value}</span>
-        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
-        <input type="hidden" name="equipamentos[]" value="${value}">
-    `;
-        list.appendChild(tag);
-        input.value = '';
-    }
-    
-    // Handle Enter key on tool input
-    document.getElementById('tool_input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTool();
-        }
-    });
 
     // Image preview
     function previewImage(input, targetId) {

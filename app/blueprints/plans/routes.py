@@ -476,6 +476,8 @@ def get_form_context():
         'installers': installers_repo.get_all(),
         'services': services_repo.get_all(),
         'materials': materials_repo.get_all(),
+        'tools': tools_repo.get_all(),
+        'equipment': equipment_repo.get_all(),
         'existing_clients': plans_repo.get_unique_values('cliente')
     }
 
