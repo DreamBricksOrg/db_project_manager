@@ -25,6 +25,28 @@
             {% endif %}
         </div>
 
+        {% if projetos_relacionados %}
+        <div class="form-group" style="padding: 15px; border-radius: 8px; border: 1px solid var(--color-border); background-color: rgba(226, 245, 11, 0.1);">
+            <label class="form-label">
+                <span class="badge" style="background-color: var(--color-yellow); color: #000; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8em; margin-bottom: 0.5rem; display: inline-block;">Em Uso</span><br>
+                Projetos Relacionados
+            </label>
+            <ul style="list-style: none; padding-left: 0; margin-top: 5px;">
+                {% for proj in projetos_relacionados %}
+                <li style="margin-bottom: 5px;">
+                    <a href="{{ url_for('projects.view_project', id=proj.id) }}" style="color: var(--color-teal); font-weight: 500; text-decoration: underline;">
+                        {{ proj.nome }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% elif equipment %}
+        <div class="form-group" style="margin-bottom: 20px;">
+            <span class="badge" style="background-color: var(--color-green); color: #fff; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.9em; display: inline-block;">Equipamento Livre</span>
+        </div>
+        {% endif %}
+
         <div class="btn-group">
             <button type="submit" class="btn btn-primary">Salvar</button>
             <a href="{{ url_for('admin.list_equipment') }}" class="btn btn-secondary">Cancelar</a>

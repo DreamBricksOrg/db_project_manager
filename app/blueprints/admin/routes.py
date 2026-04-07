@@ -4,8 +4,8 @@ from flask import render_template, redirect, url_for, request, flash
 
 from app.blueprints.admin import admin_bp
 from app.blueprints.auth.routes import admin_required
-from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo, users_repo
-
+from app.repositories import contacts_repo, producers_repo, installers_repo, services_repo, materials_repo, tools_repo, clients_repo, equipment_repo, users_repo, plans_repo
+from app.blueprints.plans.routes import get_plan_status
 
 def paginate_list(items, search_fields=None):
     """Shared pagination + search for admin lists."""
@@ -605,6 +605,24 @@ def delete_tool(id):
 @admin_required
 def list_equipment():
     equipment = equipment_repo.get_all()
+    plans = plans_repo.get_all()
+    
+    # Filter active plans (not concluded)
+    active_plans = [p for p in plans if get_plan_status(p) != 'Concluído']
+    
+    # Check related active plans for each equipment
+    for eq in equipment:
+        eq_name_lower = eq.get('nome', '').lower()
+        projetos = []
+        for p in active_plans:
+            # Plan equipment names list for case-insensitive matching
+            p_equipments = [e.lower() for e in p.get('equipamentos', [])]
+            if eq_name_lower in p_equipments:
+                projetos.append(p.get('nome_projeto', 'Sem Nome'))
+                
+        eq['status'] = 'Em Uso' if projetos else 'Livre'
+        eq['projetos_relacionados'] = projetos
+        
     pg = paginate_list(equipment, search_fields=['nome'])
     return render_template('admin/equipment/list.html', equipment=pg['items'], list_endpoint='admin.list_equipment', **pg)
 
@@ -653,8 +671,21 @@ def edit_equipment(id):
             equipment_repo.update(id, data)
             flash('Equipamento atualizado!', 'success')
             return redirect(url_for('admin.list_equipment'))
+            
+    # Find related active projects just for display
+    active_plans = [p for p in plans_repo.get_all() if get_plan_status(p) != 'Concluído']
+    eq_name_lower = eq.get('nome', '').lower()
+    projetos_relacionados = []
     
-    return render_template('admin/equipment/form.html', equipment=eq)
+    for p in active_plans:
+        p_equipments = [e.lower() for e in p.get('equipamentos', [])]
+        if eq_name_lower in p_equipments:
+            projetos_relacionados.append({
+                'id': p.get('project_id', ''), # Assuming it has project_id
+                'nome': p.get('nome_projeto', 'Sem Nome')
+            })
+    
+    return render_template('admin/equipment/form.html', equipment=eq, projetos_relacionados=projetos_relacionados)
 
 
 @admin_bp.route('/equipment/<id>/delete', methods=['POST'])
