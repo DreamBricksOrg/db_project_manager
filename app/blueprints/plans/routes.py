@@ -460,7 +460,7 @@ def delete_plan(id):
             filepath = current_app.config['UPLOAD_DIR'] / plan['foto_layout']
             if filepath.exists():
                 filepath.unlink()
-        except:
+        except Exception:
             pass
     
     plans_repo.delete(id)
@@ -646,6 +646,74 @@ def list_templates():
     """List all plan templates."""
     templates = plan_templates_repo.get_all()
     return render_template('plans/templates_list.html', templates=templates)
+
+
+@plans_bp.route('/templates/<id>')
+@login_required
+def view_template(id):
+    """View a plan template."""
+    template = plan_templates_repo.get_by_id(id)
+    if not template:
+        flash('Template não encontrado.', 'error')
+        return redirect(url_for('plans.list_templates'))
+
+    materials_map = {m['nome']: m for m in materials_repo.get_all()}
+    tools_map = {t['nome']: t for t in tools_repo.get_all()}
+    equipment_map = {e['nome']: e for e in equipment_repo.get_all()}
+
+    return render_template(
+        'plans/template_view.html',
+        template=template,
+        materials_map=materials_map,
+        tools_map=tools_map,
+        equipment_map=equipment_map
+    )
+
+
+@plans_bp.route('/templates/<id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_template(id):
+    """Edit a plan template."""
+    template = plan_templates_repo.get_by_id(id)
+    if not template:
+        flash('Template não encontrado.', 'error')
+        return redirect(url_for('plans.list_templates'))
+
+    if request.method == 'POST':
+        nome = request.form.get('nome')
+        descricao = request.form.get('descricao', '')
+        informacoes_importantes = request.form.get('informacoes_importantes', '')
+
+        # Get external services from form
+        servicos_tipos = request.form.getlist('servico_tipo[]')
+        servicos_resp = request.form.getlist('servico_responsavel[]')
+        servicos_externos = [
+            {'tipo': t.strip(), 'responsavel': r.strip()} 
+            for t, r in zip(servicos_tipos, servicos_resp) 
+            if t.strip()
+        ]
+
+        template_data = {
+            'nome': nome,
+            'descricao': descricao,
+            'servicos_externos': servicos_externos,
+            'materiais': request.form.getlist('materiais[]'),
+            'ferramentas': request.form.getlist('ferramentas[]'),
+            'equipamentos': request.form.getlist('equipamentos[]'),
+            'informacoes_importantes': informacoes_importantes,
+        }
+
+        if not nome:
+            flash('O nome do template é obrigatório.', 'error')
+            context = get_form_context()
+            return render_template('plans/template_form.html', template=template, **context)
+
+        plan_templates_repo.update(id, template_data)
+        flash('Template atualizado com sucesso.', 'success')
+        return redirect(url_for('plans.view_template', id=id))
+
+    context = get_form_context()
+    return render_template('plans/template_form.html', template=template, **context)
 
 
 @plans_bp.route('/templates/<id>/delete', methods=['POST'])

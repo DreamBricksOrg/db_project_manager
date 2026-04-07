@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Template - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Editar Template: {{ template.nome }}</h1>
+</div>
+
+<form method="POST">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Básicas</h2>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="width: 100%;">
+                <label class="form-label" for="nome">Nome do Template *</label>
+                <input type="text" id="nome" name="nome" class="form-input"
+                    value="{{ template.nome if template else '' }}" required>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Descrição do Template</h2>
+        </div>
+
+        <div class="form-group">
+            <textarea id="descricao" name="descricao" class="form-input"
+                placeholder="Descreva o template...">{{ template.descricao if template else '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- External Services -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Serviços Externos / Equipe Contratada</h2>
+        </div>
+
+        <div id="services-container">
+            {% set template_services = template.servicos_externos if template and template.servicos_externos else [] %}
+            {% for service in template_services %}
+            <div class="dynamic-list-item">
+                <div style="flex: 1;">
+                    <input type="text" name="servico_tipo[]" class="form-input" value="{{ service.tipo }}"
+                        placeholder="Tipo de Serviço">
+                </div>
+                <div style="flex: 1;">
+                    <input type="text" name="servico_responsavel[]" class="form-input" value="{{ service.responsavel }}"
+                        placeholder="Responsável">
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm dynamic-list-add" onclick="addServiceRow()">
+            + Adicionar Serviço
+        </button>
+    </div>
+
+    <!-- Materials -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Materiais Principais</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="material_input">Adicionar Material</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="material_input" class="form-input" placeholder="Digite o nome do material"
+                    hx-get="{{ url_for('api.autocomplete_materials') }}" hx-trigger="keyup changed delay:300ms"
+                    hx-target="#material-results" hx-swap="innerHTML" hx-vals='{"q": this.value}' autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addMaterial()">Adicionar</button>
+            </div>
+            <div id="material-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="materials-list">
+            {% set template_materials = template.materiais if template and template.materiais else [] %}
+            {% for material in template_materials %}
+            <div class="tag">
+                <span>{{ material }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="materiais[]" value="{{ material }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Ferramentas Necessárias</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="tool_input">Adicionar Ferramenta</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="tool_input" class="form-input" placeholder="Digite o nome da ferramenta" 
+                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addTool();}"
+                       hx-get="{{ url_for('api.autocomplete_tools') }}" 
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#tool-results" 
+                       hx-swap="innerHTML" 
+                       hx-vals='{"q": this.value}' 
+                       autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addTool()">Adicionar</button>
+            </div>
+            <div id="tool-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="tools-list">
+            {% set template_tools = template.ferramentas if template and template.ferramentas else [] %}
+            {% for tool in template_tools %}
+            <div class="tag">
+                <span>{{ tool }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="ferramentas[]" value="{{ tool }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Equipment -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Equipamentos</h2>
+        </div>
+
+        <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="equipment_input">Adicionar Equipamento</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="equipment_input" class="form-input" placeholder="Digite o nome do equipamento"
+                       onkeypress="if(event.key === 'Enter'){event.preventDefault(); addEquipment();}"
+                       hx-get="{{ url_for('api.autocomplete_equipment') }}" 
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#equipment-results" 
+                       hx-swap="innerHTML" 
+                       hx-vals='{"q": this.value}' 
+                       autocomplete="off">
+                <button type="button" class="btn btn-secondary" onclick="addEquipment()">Adicionar</button>
+            </div>
+            <div id="equipment-results" class="autocomplete-results" style="display: none;"></div>
+        </div>
+
+        <div class="tag-list" id="equipment-list">
+            {% set template_equipamentos = template.equipamentos if template and template.equipamentos else [] %}
+            {% for eq in template_equipamentos %}
+            <div class="tag">
+                <span>{{ eq }}</span>
+                <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+                <input type="hidden" name="equipamentos[]" value="{{ eq }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Informações Importantes</h2>
+        </div>
+
+        <div class="form-group">
+            <textarea id="informacoes_importantes" name="informacoes_importantes" class="form-input"
+                placeholder="Anotações e explicações importantes...">{{ template.informacoes_importantes if template else '' }}</textarea>
+        </div>
+    </div>
+
+    <div class="btn-group mt-4">
+        <button type="submit" class="btn btn-primary">Salvar Template</button>
+        <a href="{{ url_for('plans.list_templates') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Autocomplete handling
+    function selectAutocomplete(element, targetInput, value) {
+        const input = document.getElementById(targetInput);
+
+        // Handle tool selection
+        if (targetInput === 'tool_input') {
+            document.getElementById('tool_input').value = value;
+            addTool();
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+            return;
+        }
+
+        // Handle equipment selection
+        if (targetInput === 'equipment_input') {
+            document.getElementById('equipment_input').value = value;
+            addEquipment();
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+            return;
+        }
+
+        if (input) {
+            input.value = value;
+        }
+        
+        // Hide all autocomplete results
+        document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+    }
+
+    // Show/hide autocomplete results
+    document.addEventListener('htmx:afterSwap', function (evt) {
+        if (evt.detail.target.classList.contains('autocomplete-results')) {
+            evt.detail.target.style.display = 'block';
+        }
+    });
+
+    // Hide autocomplete on click outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+        }
+    });
+
+    // Add service row
+    function addServiceRow() {
+        const container = document.getElementById('services-container');
+        const row = document.createElement('div');
+        row.className = 'dynamic-list-item';
+        row.innerHTML = `
+        <div style="flex: 1;">
+            <input type="text" name="servico_tipo[]" class="form-input" placeholder="Tipo de Serviço">
+        </div>
+        <div style="flex: 1;">
+            <input type="text" name="servico_responsavel[]" class="form-input" placeholder="Responsável">
+        </div>
+        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">×</button>
+    `;
+        container.appendChild(row);
+    }
+
+    // Add material
+    function addMaterial() {
+        const input = document.getElementById('material_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('materials-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="materiais[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+
+    // Handle Enter key on material input
+    document.getElementById('material_input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addMaterial();
+        }
+    });
+
+    // Add tool
+    function addTool() {
+        const input = document.getElementById('tool_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('tools-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="ferramentas[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+
+    // Handle Enter key on tool input
+    document.getElementById('tool_input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTool();
+        }
+    });
+
+    // Add equipment
+    function addEquipment() {
+        const input = document.getElementById('equipment_input');
+        const value = input.value.trim();
+        if (!value) return;
+
+        const list = document.getElementById('equipment-list');
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `
+        <span>${value}</span>
+        <button type="button" class="tag-remove" onclick="this.parentElement.remove()">×</button>
+        <input type="hidden" name="equipamentos[]" value="${value}">
+    `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+</script>
+{% endblock %}

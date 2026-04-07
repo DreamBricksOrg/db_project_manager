@@ -30,6 +30,8 @@
                 <td data-label="Ferramentas">{{ (tpl.ferramentas or [])|length }} itens</td>
                 <td data-label="Equipamentos">{{ (tpl.equipamentos or [])|length }} itens</td>
                 <td class="table-actions" data-label="Ações">
+                    <a href="{{ url_for('plans.view_template', id=tpl.id) }}" class="btn btn-sm btn-primary">Visualizar</a>
+                    <a href="{{ url_for('plans.edit_template', id=tpl.id) }}" class="btn btn-sm btn-secondary">Editar</a>
                     <form method="POST" action="{{ url_for('plans.delete_template', id=tpl.id) }}" style="display: inline;"
                           data-confirm="Tem certeza que deseja excluir este template?">
                         <button type="submit" class="btn btn-sm btn-danger">Excluir</button>

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Template: {{ template.nome }} - OOH Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Template: {{ template.nome }}</h1>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('plans.edit_template', id=template.id) }}" class="btn btn-primary">Editar</a>
+        <a href="{{ url_for('plans.list_templates') }}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<!-- Description -->
+{% if template.descricao %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Descrição do Template</h2>
+    </div>
+    <p style="white-space: pre-wrap;">{{ template.descricao }}</p>
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <!-- External Services -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🚚 Serviços Externos</h2>
+        </div>
+        {% set services = template.servicos_externos if template.servicos_externos else [] %}
+        {% if services %}
+        <ul style="list-style: none;">
+            {% for service in services %}
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--color-ice);">
+                <strong>{{ service.tipo }}</strong><br>
+                <span style="color: #64748b;">{{ service.responsavel if service.responsavel else '—' }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: #64748b;">Nenhum serviço externo</p>
+        {% endif %}
+    </div>
+
+    <!-- Materials -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📦 Materiais Principais</h2>
+        </div>
+        {% set materials = template.materiais if template.materiais else [] %}
+        {% if materials %}
+        <div class="tag-list">
+            {% for material in materials %}
+                {% if material is string %}
+                    {% set mat_nome = material %}
+                {% else %}
+                    {% set mat_nome = material.nome %}
+                {% endif %}
+                
+                {% set mat_obj = materials_map.get(mat_nome) %}
+                {% if mat_obj and mat_obj.image %}
+                <div class="tag" 
+                     style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                     onclick="openLightbox('{{ url_for('static', filename=mat_obj.image) }}', '{{ mat_nome }}')">
+                    {{ mat_nome }} {% if not (material is string) and material.quantidade %}({{ material.quantidade }}){% endif %} 📷
+                </div>
+                {% else %}
+                <div class="tag">{{ mat_nome }} {% if not (material is string) and material.quantidade %}({{ material.quantidade }}){% endif %}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #64748b;">Nenhum material listado</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Tools -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🛠️ Ferramentas Necessárias</h2>
+        </div>
+        {% set tools = template.ferramentas if template.ferramentas else [] %}
+        {% if tools %}
+        <div class="tag-list">
+            {% for tool in tools %}
+                {% if tool is string %}
+                    {% set tool_nome = tool %}
+                {% else %}
+                    {% set tool_nome = tool.nome %}
+                {% endif %}
+                
+                {% set tool_obj = tools_map.get(tool_nome) %}
+                {% if tool_obj and tool_obj.image %}
+                <div class="tag" 
+                     style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                     onclick="openLightbox('{{ url_for('static', filename=tool_obj.image) }}', '{{ tool_nome }}')">
+                    {{ tool_nome }} {% if not (tool is string) and tool.quantidade %}({{ tool.quantidade }}){% endif %} 📷
+                </div>
+                {% else %}
+                <div class="tag">{{ tool_nome }} {% if not (tool is string) and tool.quantidade %}({{ tool.quantidade }}){% endif %}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #64748b;">Nenhuma ferramenta listada</p>
+        {% endif %}
+    </div>
+
+    <!-- Equipment -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">⚙️ Equipamentos</h2>
+        </div>
+        {% set equipment = template.equipamentos if template.equipamentos else [] %}
+        {% if equipment %}
+        <div class="tag-list">
+            {% for eq in equipment %}
+                {% if eq is string %}
+                    {% set eq_nome = eq %}
+                {% else %}
+                    {% set eq_nome = eq.nome %}
+                {% endif %}
+                
+                {% set eq_obj = equipment_map.get(eq_nome) %}
+                {% if eq_obj and eq_obj.image %}
+                <div class="tag" 
+                     style="cursor: pointer; border: 1px solid var(--color-teal); color: var(--color-teal);"
+                     onclick="openLightbox('{{ url_for('static', filename=eq_obj.image) }}', '{{ eq_nome }}')">
+                    {{ eq_nome }} {% if not (eq is string) and eq.quantidade %}({{ eq.quantidade }}){% endif %} 📷
+                </div>
+                {% else %}
+                <div class="tag">{{ eq_nome }} {% if not (eq is string) and eq.quantidade %}({{ eq.quantidade }}){% endif %}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #64748b;">Nenhum equipamento listado</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Notes -->
+{% if template.informacoes_importantes %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h2 class="card-title">⚠️ Informações Importantes</h2>
+    </div>
+    <p style="white-space: pre-wrap;">{{ template.informacoes_importantes }}</p>
+</div>
+{% endif %}
+{% endblock %}
