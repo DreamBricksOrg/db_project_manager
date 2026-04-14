@@ -1,0 +1,19 @@
+{
+  "name": "DreamBricks Project Manager",
+  "short_name": "DB Manager",
+  "description": "Gerencie projetos, plantas, equipe e materiais no DreamBricks.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F7FAFC",
+  "theme_color": "#0D1B2A",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/static/images/dreambricks_logo_250x160.png",
+      "sizes": "250x160",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

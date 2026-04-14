@@ -1,6 +1,6 @@
 """OOH Project Manager - Flask Application Factory"""
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 
@@ -41,5 +41,13 @@ def create_app(config_class=Config):
     def index():
         from flask import redirect, url_for
         return redirect(url_for('plans.list_plans'))
+
+    @app.route('/manifest.webmanifest')
+    def manifest():
+        return send_from_directory(app.static_folder, 'manifest.webmanifest')
+
+    @app.route('/service-worker.js')
+    def service_worker():
+        return send_from_directory(app.static_folder, 'service-worker.js')
 
     return app
