@@ -1,60 +1,106 @@
-/* OOH Project Manager - Design System */
+/* OOH Project Manager - DreamBricks Design System
+   Tokens mirror design-system/DreamBricks-Design-System/tokens/*.css —
+   legacy --color-* / --radius-* / --shadow-* names are kept as aliases so
+   every template keeps working unchanged, but now resolve to brand values. */
 
-@font-face {
-    font-family: 'Araboto';
-    src: url('../fonts/Araboto-Normal-400.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Araboto';
-    src: url('../fonts/Araboto-Bold-400.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
-    /* Brand Colors */
-    --color-white: #ffffff;
-    --color-ice: #c7f1ff;
-    --color-cyan: #52cdef;
-    --color-teal: #42b0d5;
-    --color-navy: #034a5d;
+    /* ---- DreamBricks brand blues (brandbook v1.1) ---- */
+    --db-blue-50: #c7f1ff;
+    --db-blue-300: #52cdef;
+    --db-blue-500: #42b0d5;
+    --db-blue-900: #034a5d;
+    --db-white: #ffffff;
+    --db-blue-100: oklch(from var(--db-blue-50) calc(l - 0.04) c h);
+    --db-blue-200: oklch(from var(--db-blue-300) calc(l + 0.09) calc(c * 0.7) h);
+    --db-blue-400: oklch(from var(--db-blue-300) calc(l - 0.06) c h);
+    --db-blue-600: oklch(from var(--db-blue-500) calc(l - 0.09) c h);
+    --db-blue-700: oklch(from var(--db-blue-500) calc(l - 0.18) c h);
+    --db-blue-800: oklch(from var(--db-blue-900) calc(l + 0.08) c h);
+
+    /* ---- Neutrals (slate tinted toward brand ink blue) ---- */
+    --db-slate-25:  oklch(0.99 0.003 230);
+    --db-slate-50:  oklch(0.97 0.006 230);
+    --db-slate-100: oklch(0.94 0.010 230);
+    --db-slate-200: oklch(0.89 0.014 230);
+    --db-slate-300: oklch(0.80 0.018 230);
+    --db-slate-400: oklch(0.65 0.020 230);
+    --db-slate-500: oklch(0.52 0.022 230);
+    --db-slate-600: oklch(0.42 0.024 230);
+    --db-slate-700: oklch(0.33 0.026 230);
+    --db-slate-800: oklch(0.24 0.028 230);
+    --db-slate-900: oklch(0.16 0.028 230);
+
+    /* ---- Semantic (harmonized in oklch) ---- */
+    --db-success-500: oklch(0.62 0.14 155);
+    --db-success-100: oklch(0.94 0.05 155);
+    --db-warning-500: oklch(0.78 0.15 80);
+    --db-warning-100: oklch(0.95 0.06 80);
+    --db-danger-500: oklch(0.58 0.20 25);
+    --db-danger-100: oklch(0.94 0.06 25);
+
+    /* Brand Colors (legacy aliases used throughout templates) */
+    --color-white: var(--db-white);
+    --color-ice: var(--db-blue-50);
+    --color-cyan: var(--db-blue-300);
+    --color-teal: var(--db-blue-500);
+    --color-navy: var(--db-blue-900);
+    --color-dark: var(--db-blue-900);
 
     /* Semantic Colors */
-    --color-success: #10b981;
-    --color-success-light: #d1fae5;
-    --color-warning: #f59e0b;
-    --color-warning-light: #fef3c7;
-    --color-danger: #ef4444;
-    --color-danger-light: #fee2e2;
-    --color-slate: #64748b;
-    --color-slate-light: #f1f5f9;
+    --color-success: var(--db-success-500);
+    --color-success-light: var(--db-success-100);
+    --color-warning: var(--db-warning-500);
+    --color-warning-light: var(--db-warning-100);
+    --color-danger: var(--db-danger-500);
+    --color-danger-light: var(--db-danger-100);
+    --color-slate: var(--db-slate-500);
+    --color-slate-light: var(--db-slate-100);
+    --color-yellow: var(--db-warning-500);
+    --color-green: var(--db-success-500);
 
-    /* Border Radius */
-    --radius-sm: 8px;
-    --radius-md: 12px;
+    /* Border Radius (design-system/tokens/spacing.css scale) */
+    --radius-sm: 6px;
+    --radius-md: 10px;
     --radius-lg: 16px;
     --radius-xl: 24px;
-    --radius-full: 9999px;
+    --radius-full: 999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(3, 74, 93, 0.1);
-    --shadow-md: 0 4px 12px rgba(3, 74, 93, 0.15);
-    --shadow-lg: 0 10px 25px rgba(3, 74, 93, 0.2);
-    --shadow-xl: 0 20px 40px rgba(3, 74, 93, 0.25);
+    /* Shadows — soft, cool-toned (ink-blue tinted, not pure black) */
+    --shadow-sm: 0 1px 2px oklch(0.16 0.028 230 / 0.06), 0 1px 1px oklch(0.16 0.028 230 / 0.04);
+    --shadow-md: 0 4px 10px oklch(0.16 0.028 230 / 0.08), 0 2px 4px oklch(0.16 0.028 230 / 0.05);
+    --shadow-lg: 0 12px 24px oklch(0.16 0.028 230 / 0.12), 0 4px 8px oklch(0.16 0.028 230 / 0.06);
+    --shadow-xl: 0 20px 40px oklch(0.16 0.028 230 / 0.18);
+    --shadow-focus: 0 0 0 3px oklch(0.72 0.13 230 / 0.35);
 
-    /* Transitions */
-    --transition-fast: 150ms ease;
-    --transition-base: 200ms ease;
-    --transition-slow: 300ms ease;
+    /* Transitions (design-system/tokens/spacing.css motion) */
+    --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 280ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Spacing scale (4px base grid) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
 
     /* Sidebar */
     --sidebar-width: 260px;
     --sidebar-collapsed: 72px;
 
-    --font-family: 'Araboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Typography — Poppins substituted for the brandbook's proprietary
+       Araboto (see design-system/tokens/typography.css). */
+    --font-brand: 'Poppins', 'Century Gothic', ui-sans-serif, sans-serif;
+    --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+    --font-family: var(--font-body);
 }
 
 * {
@@ -197,7 +243,7 @@ body {
 }
 
 .form-input::placeholder {
-    color: #94a3b8;
+    color: var(--db-slate-400);
 }
 
 textarea.form-input {
@@ -293,7 +339,7 @@ textarea.form-input {
 }
 
 .btn-info {
-    background: #0ea5e9; /* Sky 500 */
+    background: var(--db-blue-400);
     color: var(--color-white);
 }
 
@@ -302,12 +348,12 @@ textarea.form-input {
 }
 
 .btn-info:hover {
-    background: #0284c7; /* Sky 600 */
+    background: var(--db-blue-600);
     color: var(--color-white);
 }
 
 .btn-danger {
-    background: #ef4444;
+    background: var(--color-danger);
     color: var(--color-white);
 }
 
@@ -316,7 +362,7 @@ textarea.form-input {
 }
 
 .btn-danger:hover {
-    background: #dc2626;
+    background: oklch(from var(--color-danger) calc(l - 0.08) c h);
     color: var(--color-white);
 }
 
@@ -431,7 +477,7 @@ textarea.form-input {
 
 .tag-remove:hover {
     opacity: 1;
-    color: #ef4444;
+    color: var(--color-danger);
 }
 
 /* Alerts */
@@ -442,15 +488,15 @@ textarea.form-input {
 }
 
 .alert-success {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #86efac;
+    background: var(--db-success-100);
+    color: oklch(from var(--db-success-500) calc(l - 0.22) c h);
+    border: 1px solid oklch(from var(--db-success-500) calc(l + 0.05) c h);
 }
 
 .alert-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+    background: var(--db-danger-100);
+    color: oklch(from var(--db-danger-500) calc(l - 0.18) c h);
+    border: 1px solid oklch(from var(--db-danger-500) calc(l + 0.08) c h);
 }
 
 /* Login Page */
@@ -479,7 +525,7 @@ textarea.form-input {
 }
 
 .login-header p {
-    color: #64748b;
+    color: var(--color-slate);
 }
 
 /* Page Headers */
@@ -535,7 +581,7 @@ textarea.form-input {
 .empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: #64748b;
+    color: var(--color-slate);
 }
 
 .empty-state h3 {
@@ -608,7 +654,7 @@ textarea.form-input {
 
 .plan-detail dt {
     font-weight: 500;
-    color: #64748b;
+    color: var(--color-slate);
 }
 
 .plan-detail dd {
@@ -1230,7 +1276,7 @@ textarea.form-input {
 .text-center { text-align: center; }
 .text-start { text-align: left; }
 .text-end { text-align: right; }
-.text-muted { color: #94a3b8 !important; }
+.text-muted { color: var(--db-slate-400) !important; }
 .text-primary { color: var(--color-teal) !important; }
 .text-dark { color: var(--color-navy) !important; }
 .fw-bold { font-weight: 700 !important; }
@@ -1657,7 +1703,7 @@ thead .gantt-col-project {
 }
 
 .gantt-weekend {
-    color: #fbbf24 !important;
+    color: var(--color-warning) !important;
 }
 
 .gantt-col-day {

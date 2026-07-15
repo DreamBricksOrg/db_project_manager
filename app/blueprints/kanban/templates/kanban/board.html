@@ -174,7 +174,7 @@
         </div>
         <div class="kb-modal-footer">
             <button class="btn btn-secondary btn-sm" onclick="closeTaskModal()">Cancelar</button>
-            <button class="btn btn-primary btn-sm" id="btnDeleteTask" style="display:none;background:#ef4444" onclick="deleteCurrentTask()">Excluir</button>
+            <button class="btn btn-primary btn-sm" id="btnDeleteTask" style="display:none;background:var(--color-danger)" onclick="deleteCurrentTask()">Excluir</button>
             <button class="btn btn-primary btn-sm" id="btnSaveTask" onclick="saveTask()">Salvar Tarefa</button>
         </div>
     </div>
@@ -552,7 +552,7 @@ document.addEventListener('keydown', e => {
 /* Column */
 .kb-column {
     flex: 0 0 280px;
-    background: #f8fafc;
+    background: var(--db-slate-50);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-ice);
     display: flex;
@@ -617,7 +617,7 @@ document.addEventListener('keydown', e => {
     transition: all 0.15s;
 }
 .kb-col-btn:hover { background: var(--color-ice); color: var(--color-navy); }
-.kb-col-btn-danger:hover { background: #fee2e2; color: #ef4444; }
+.kb-col-btn-danger:hover { background: var(--color-danger-light); color: var(--color-danger); }
 
 /* Cards zone */
 .kb-cards {
@@ -669,8 +669,8 @@ document.addEventListener('keydown', e => {
     padding: 2px 8px;
     border-radius: 99px;
     border: 1px solid currentColor;
-    background: #f0f0f0;
-    color: #555;
+    background: var(--db-slate-100);
+    color: var(--db-slate-600);
 }
 .kb-card-title {
     font-size: 0.9rem;
@@ -703,9 +703,9 @@ document.addEventListener('keydown', e => {
     padding: 2px 8px;
     border-radius: 99px;
 }
-.kb-priority-alta   { background:#fee2e2; color:#dc2626; }
-.kb-priority-media  { background:#fef3c7; color:#d97706; }
-.kb-priority-baixa  { background:#d1fae5; color:#059669; }
+.kb-priority-alta   { background: var(--color-danger-light); color: var(--color-danger); }
+.kb-priority-media  { background: var(--color-warning-light); color: var(--color-warning); }
+.kb-priority-baixa  { background: var(--color-success-light); color: var(--color-success); }
 .kb-card-date {
     font-size: 0.72rem;
     color: var(--color-slate);
@@ -713,7 +713,7 @@ document.addEventListener('keydown', e => {
     align-items: center;
     gap: 3px;
 }
-.kb-overdue { color: #ef4444 !important; font-weight: 600; }
+.kb-overdue { color: var(--color-danger) !important; font-weight: 600; }
 .kb-avatar {
     width: 22px;
     height: 22px;

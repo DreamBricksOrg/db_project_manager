@@ -106,7 +106,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p style="color: #64748b;">Nenhum instalador atribuído</p>
+        <p style="color: var(--color-slate);">Nenhum instalador atribuído</p>
         {% endif %}
     </div>
 
@@ -121,12 +121,12 @@
             {% for service in services %}
             <li style="padding: 8px 0; border-bottom: 1px solid var(--color-ice);">
                 <strong>{{ service.tipo }}</strong><br>
-                <span style="color: #64748b;">{{ service.responsavel }}</span>
+                <span style="color: var(--color-slate);">{{ service.responsavel }}</span>
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p style="color: #64748b;">Nenhum serviço externo</p>
+        <p style="color: var(--color-slate);">Nenhum serviço externo</p>
         {% endif %}
     </div>
 </div>
@@ -153,7 +153,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p style="color: #64748b;">Nenhum material listado</p>
+    <p style="color: var(--color-slate);">Nenhum material listado</p>
     {% endif %}
 </div>
 
@@ -179,7 +179,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p style="color: #64748b;">Nenhuma ferramenta listada</p>
+    <p style="color: var(--color-slate);">Nenhuma ferramenta listada</p>
     {% endif %}
 </div>
 
@@ -205,7 +205,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p style="color: #64748b;">Nenhum equipamento listado</p>
+    <p style="color: var(--color-slate);">Nenhum equipamento listado</p>
     {% endif %}
 </div>
 
@@ -222,13 +222,13 @@
             border-radius: 50%; 
             background-color: {{ plan.cor_iluminacao }};
             box-shadow: 0 0 20px {{ plan.cor_iluminacao }};
-            border: 2px solid #fff;
+            border: 2px solid var(--color-white);
         "></div>
         <div>
             <strong style="display: block; margin-bottom: 4px;">Cor Selecionada</strong>
-            <span onclick="copyPlanColor(this, '{{ plan.cor_iluminacao }}')" style="cursor: pointer; font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; transition: all 0.2s;" title="Clique para copiar Hex">{{ plan.cor_iluminacao }}</span>
+            <span onclick="copyPlanColor(this, '{{ plan.cor_iluminacao }}')" style="cursor: pointer; font-family: var(--font-mono); color: var(--color-slate); background: var(--db-slate-100); padding: 2px 6px; border-radius: 4px; transition: all 0.2s;" title="Clique para copiar Hex">{{ plan.cor_iluminacao }}</span>
             {% if plan.rgb_iluminacao %}
-            <span onclick="copyPlanColor(this, 'RGB({{ plan.rgb_iluminacao }})')" style="cursor: pointer; font-family: monospace; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px; transition: all 0.2s;" title="Clique para copiar RGB">RGB({{ plan.rgb_iluminacao }})</span>
+            <span onclick="copyPlanColor(this, 'RGB({{ plan.rgb_iluminacao }})')" style="cursor: pointer; font-family: var(--font-mono); color: var(--color-slate); background: var(--db-slate-100); padding: 2px 6px; border-radius: 4px; margin-left: 8px; transition: all 0.2s;" title="Clique para copiar RGB">RGB({{ plan.rgb_iluminacao }})</span>
             {% endif %}
         </div>
     </div>
@@ -241,8 +241,8 @@ function copyPlanColor(el, text) {
         const originalColor = el.style.color;
         
         el.innerText = 'Copiado!';
-        el.style.backgroundColor = '#10b981'; // Tailwind emerald-500
-        el.style.color = '#ffffff';
+        el.style.backgroundColor = 'var(--color-success)';
+        el.style.color = 'var(--color-white)';
         
         setTimeout(() => {
             el.innerText = originalText;

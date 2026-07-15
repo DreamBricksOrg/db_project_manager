@@ -238,7 +238,7 @@
     <input type="file" id="photoGalleryInput" accept="image/*" style="display:none" onchange="handlePhotoSelected(this)">
 
     <!-- Upload status -->
-    <div id="photoUploadStatus" style="display:none; padding:12px 16px; background:#f0f9ff; border-radius:8px; margin:0 16px 16px; color:#0369a1; font-size:0.9rem;">
+    <div id="photoUploadStatus" style="display:none; padding:12px 16px; background:var(--color-ice); border-radius:var(--radius-sm); margin:0 16px 16px; color:var(--db-blue-600); font-size:0.9rem;">
         Enviando foto...
     </div>
 
@@ -247,17 +247,17 @@
         {% for photo in photos %}
         <div class="install-photo-thumb" 
              onclick="openPhotoLightbox('{{ url_for('static', filename='uploads/' + photo.filename) }}', '{{ photo.datetime_br }}', '{{ photo.device }}', {{ photo.latitude if photo.latitude else 'null' }}, {{ photo.longitude if photo.longitude else 'null' }}, '{{ photo.id }}', '{{ photo.location_address|default('', true)|e }}')"
-             style="cursor:pointer; border-radius:8px; overflow:hidden; aspect-ratio:1; position:relative; background:#f1f5f9;">
+             style="cursor:pointer; border-radius:8px; overflow:hidden; aspect-ratio:1; position:relative; background:var(--db-slate-100);">
             <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
                  style="width:100%; height:100%; object-fit:cover;" loading="lazy">
                  
             <div class="photo-sync-badge" id="sync-badge-{{ photo.id }}" style="position:absolute; bottom:8px; right:8px; z-index:10;">
                 {% if photo.drive_file_id %}
-                <span title="Sincronizado no Drive" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:50%; color:#10b981; box-shadow:0 1px 3px rgba(0,0,0,0.3);">
+                <span title="Sincronizado no Drive" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:50%; color:var(--color-success); box-shadow:0 1px 3px rgba(0,0,0,0.3);">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                 </span>
                 {% else %}
-                <button type="button" onclick="syncPhotoToDrive(event, '{{ photo.id }}')" title="Sincronizar com Drive" style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:var(--color-slate-light); border:1px solid #cbd5e1; border-radius:50%; color:var(--color-navy); cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.3); padding:0;">
+                <button type="button" onclick="syncPhotoToDrive(event, '{{ photo.id }}')" title="Sincronizar com Drive" style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:var(--color-slate-light); border:1px solid var(--db-slate-300); border-radius:50%; color:var(--color-navy); cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.3); padding:0;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                 </button>
                 {% endif %}
@@ -265,7 +265,7 @@
         </div>
         {% endfor %}
         {% if not photos %}
-        <p style="color:#94a3b8; grid-column:1/-1; text-align:center; padding:24px 0;">Nenhuma foto de instalação registrada.</p>
+        <p style="color:var(--db-slate-400); grid-column:1/-1; text-align:center; padding:24px 0;">Nenhuma foto de instalação registrada.</p>
         {% endif %}
     </div>
 </div>
@@ -297,7 +297,7 @@
 
 <!-- Manual Location Modal -->
 <div id="manualLocationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:32px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="background:var(--color-white); border-radius:var(--radius-lg); padding:32px; max-width:420px; width:90%; box-shadow:var(--shadow-xl);">
         <h3 style="margin:0 0 16px 0;">Adicionar Localização</h3>
         <div class="form-group">
             <label class="form-label">Endereço</label>
@@ -312,10 +312,10 @@
 
 <!-- Drive Login Modal -->
 <div id="driveLoginModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:32px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); text-align:center;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:48px;height:48px;color:#f59e0b;margin-bottom:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
+    <div style="background:var(--color-white); border-radius:var(--radius-lg); padding:32px; max-width:420px; width:90%; box-shadow:var(--shadow-xl); text-align:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:48px;height:48px;color:var(--color-warning);margin-bottom:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
         <h3 style="margin:0 0 8px 0;">Conectar Google Drive</h3>
-        <p style="color:#64748b; margin:0 0 20px 0; font-size:0.9rem;">Para fazer upload de fotos, é necessário conectar sua conta do Google Drive primeiro.</p>
+        <p style="color:var(--color-slate); margin:0 0 20px 0; font-size:0.9rem;">Para fazer upload de fotos, é necessário conectar sua conta do Google Drive primeiro.</p>
         <div style="display:flex; gap:8px; justify-content:center;">
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('driveLoginModal').style.display='none'">Cancelar</button>
             <a href="{{ url_for('drive.auth') }}" class="btn btn-primary">Conectar Drive</a>
@@ -325,9 +325,9 @@
 
 <!-- Drive Pasta Modal -->
 <div id="drivePastaModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:32px; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="background:var(--color-white); border-radius:var(--radius-lg); padding:32px; max-width:480px; width:90%; box-shadow:var(--shadow-xl);">
         <h3 style="margin:0 0 8px 0;">Definir Pasta do Drive</h3>
-        <p style="color:#64748b; margin:0 0 16px 0; font-size:0.9rem;">Informe o caminho da pasta do projeto dentro do Google Drive. A pasta raiz é sempre <strong>Projetos</strong> e a pasta final é <strong>Fotos da Instalação</strong>.</p>
+        <p style="color:var(--color-slate); margin:0 0 16px 0; font-size:0.9rem;">Informe o caminho da pasta do projeto dentro do Google Drive. A pasta raiz é sempre <strong>Projetos</strong> e a pasta final é <strong>Fotos da Instalação</strong>.</p>
         <div class="form-group" style="margin-bottom:16px;">
             <div class="d-flex align-items-center gap-2">
                 <span style="color:var(--color-slate); font-size:0.85rem; white-space:nowrap;">Projetos /</span>
@@ -448,19 +448,19 @@ function handlePhotoSelected(input) {
     .then(data => {
         if (data.success) {
             status.textContent = 'Foto enviada com sucesso!';
-            status.style.background = '#f0fdf4';
-            status.style.color = '#166534';
+            status.style.background = 'var(--color-success-light)';
+            status.style.color = 'var(--db-success-500)';
             setTimeout(() => location.reload(), 800);
         } else {
             status.textContent = 'Erro: ' + (data.error || 'Falha ao enviar');
-            status.style.background = '#fef2f2';
-            status.style.color = '#991b1b';
+            status.style.background = 'var(--color-danger-light)';
+            status.style.color = 'var(--db-danger-500)';
         }
     })
     .catch(() => {
         status.textContent = 'Erro de rede ao enviar foto.';
-        status.style.background = '#fef2f2';
-        status.style.color = '#991b1b';
+        status.style.background = 'var(--color-danger-light)';
+        status.style.color = 'var(--db-danger-500)';
     });
     
     input.value = '';
@@ -476,7 +476,7 @@ function openPhotoLightbox(src, datetime, device, lat, lng, photoId, savedAddres
     
     // Priority: saved address > reverse geocode > manual entry
     if (savedAddress) {
-        locEl.innerHTML = `<a href="https://www.google.com/maps/search/${encodeURIComponent(savedAddress)}" target="_blank" style="color:#93c5fd; text-decoration:none;">${savedAddress}</a>`;
+        locEl.innerHTML = `<a href="https://www.google.com/maps/search/${encodeURIComponent(savedAddress)}" target="_blank" style="color:var(--db-blue-300); text-decoration:none;">${savedAddress}</a>`;
     } else if (lat && lng) {
         locEl.textContent = 'Buscando endereço...';
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`)
@@ -492,7 +492,7 @@ function openPhotoLightbox(src, datetime, device, lat, lng, photoId, savedAddres
                     if (a.postcode) parts.push(a.postcode);
                     if (parts.length) addr = parts.join(', ');
                 }
-                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#93c5fd; text-decoration:none;">${addr}</a>`;
+                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--db-blue-300); text-decoration:none;">${addr}</a>`;
                 // Save resolved address
                 fetch(`/projects/${PROJECT_ID}/photos/${photoId}/location`, {
                     method: 'POST',
@@ -501,10 +501,10 @@ function openPhotoLightbox(src, datetime, device, lat, lng, photoId, savedAddres
                 });
             })
             .catch(() => {
-                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#93c5fd; text-decoration:none;">${lat}, ${lng}</a>`;
+                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--db-blue-300); text-decoration:none;">${lat}, ${lng}</a>`;
             });
     } else {
-        locEl.innerHTML = '<a href="#" onclick="event.preventDefault(); openManualLocationModal()" style="color:#f59e0b; text-decoration:underline; cursor:pointer;">Adicionar localização</a>';
+        locEl.innerHTML = '<a href="#" onclick="event.preventDefault(); openManualLocationModal()" style="color:var(--color-warning); text-decoration:underline; cursor:pointer;">Adicionar localização</a>';
     }
     
     document.getElementById('lightboxDeleteForm').action = `/projects/${PROJECT_ID}/photos/${photoId}/delete`;
@@ -529,7 +529,7 @@ function saveManualAddress() {
     .then(data => {
         if (data.success) {
             const locEl = document.getElementById('lightboxLocation');
-            locEl.innerHTML = `<a href="https://www.google.com/maps/search/${encodeURIComponent(address)}" target="_blank" style="color:#93c5fd; text-decoration:none;">${address}</a>`;
+            locEl.innerHTML = `<a href="https://www.google.com/maps/search/${encodeURIComponent(address)}" target="_blank" style="color:var(--db-blue-300); text-decoration:none;">${address}</a>`;
             document.getElementById('manualLocationModal').style.display = 'none';
         }
     });
@@ -557,7 +557,7 @@ function syncPhotoToDrive(event, photoId) {
             // Loading spinner SVG
             badgeDiv.innerHTML = `
             <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.3);">
-                <svg style="animation: spin 1s linear infinite; width:14px; height:14px; color:#f59e0b;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg style="animation: spin 1s linear infinite; width:14px; height:14px; color:var(--color-warning);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </span>
             <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             `;
@@ -567,7 +567,7 @@ function syncPhotoToDrive(event, photoId) {
                 .then(res => {
                     if (res.success) {
                         badgeDiv.innerHTML = `
-                            <span title="Sincronizado no Drive" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:50%; color:#10b981; box-shadow:0 1px 3px rgba(0,0,0,0.3);">
+                            <span title="Sincronizado no Drive" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:50%; color:var(--color-success); box-shadow:0 1px 3px rgba(0,0,0,0.3);">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                             </span>
                         `;
@@ -776,15 +776,15 @@ document.getElementById('photoLightbox').addEventListener('click', e => { if (e.
 {% if not plan %}
 <!-- Modal: Choose Template -->
 <div id="templateChoiceModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:32px; max-width:480px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:80vh; overflow-y:auto;">
+    <div style="background:var(--color-white); border-radius:var(--radius-lg); padding:32px; max-width:480px; width:90%; box-shadow:var(--shadow-xl); max-height:80vh; overflow-y:auto;">
         <h3 style="margin:0 0 8px 0;">Usar Template?</h3>
-        <p style="color:#64748b; margin:0 0 20px 0; font-size:0.9rem;">
+        <p style="color:var(--color-slate); margin:0 0 20px 0; font-size:0.9rem;">
             Selecione um template para pré-preencher o plano de instalação, ou crie sem template.
         </p>
         <div id="templateList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
-            <p style="color:#94a3b8; text-align:center;">Carregando templates...</p>
+            <p style="color:var(--db-slate-400); text-align:center;">Carregando templates...</p>
         </div>
-        <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid #e2e8f0; padding-top:16px;">
+        <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--db-slate-200); padding-top:16px;">
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('templateChoiceModal').style.display='none'">Cancelar</button>
             <a href="{{ url_for('plans.new_plan', project_id=project.id) }}" class="btn btn-primary">Gerar sem Template</a>
         </div>
@@ -801,7 +801,7 @@ function openTemplateModal() {
         .then(r => r.json())
         .then(templates => {
             if (templates.length === 0) {
-                list.innerHTML = '<p style="color:#94a3b8; text-align:center;">Nenhum template disponível.</p>';
+                list.innerHTML = '<p style="color:var(--db-slate-400); text-align:center;">Nenhum template disponível.</p>';
                 return;
             }
             list.innerHTML = '';
@@ -809,13 +809,13 @@ function openTemplateModal() {
                 const btn = document.createElement('a');
                 btn.href = '{{ url_for("plans.new_plan", project_id=project.id) }}&template_id=' + t.id;
                 btn.className = 'btn btn-secondary';
-                btn.style.cssText = 'text-align:left; display:block; padding:12px 16px; border:1px solid #e2e8f0; border-radius:8px;';
+                btn.style.cssText = 'text-align:left; display:block; padding:12px 16px; border:1px solid var(--db-slate-200); border-radius:var(--radius-sm);';
                 btn.textContent = t.nome;
                 list.appendChild(btn);
             });
         })
         .catch(() => {
-            list.innerHTML = '<p style="color:#ef4444;">Erro ao carregar templates.</p>';
+            list.innerHTML = '<p style="color:var(--color-danger);">Erro ao carregar templates.</p>';
         });
 }
 </script>

@@ -33,12 +33,12 @@
             {% for service in services %}
             <li style="padding: 8px 0; border-bottom: 1px solid var(--color-ice);">
                 <strong>{{ service.tipo }}</strong><br>
-                <span style="color: #64748b;">{{ service.responsavel if service.responsavel else '—' }}</span>
+                <span style="color: var(--color-slate);">{{ service.responsavel if service.responsavel else '—' }}</span>
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p style="color: #64748b;">Nenhum serviço externo</p>
+        <p style="color: var(--color-slate);">Nenhum serviço externo</p>
         {% endif %}
     </div>
 
@@ -70,7 +70,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p style="color: #64748b;">Nenhum material listado</p>
+        <p style="color: var(--color-slate);">Nenhum material listado</p>
         {% endif %}
     </div>
 </div>
@@ -104,7 +104,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p style="color: #64748b;">Nenhuma ferramenta listada</p>
+        <p style="color: var(--color-slate);">Nenhuma ferramenta listada</p>
         {% endif %}
     </div>
 
@@ -136,7 +136,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p style="color: #64748b;">Nenhum equipamento listado</p>
+        <p style="color: var(--color-slate);">Nenhum equipamento listado</p>
         {% endif %}
     </div>
 </div>

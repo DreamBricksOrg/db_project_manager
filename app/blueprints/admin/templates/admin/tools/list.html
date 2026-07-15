@@ -38,7 +38,7 @@
                              style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer;"
                              onclick="openLightbox('{{ url_for('static', filename=tool.image) }}', '{{ tool.nome }}')">
                         {% else %}
-                        <div style="width: 40px; height: 40px; background: #eee; border-radius: 4px;"></div>
+                        <div style="width: 40px; height: 40px; background: var(--db-slate-100); border-radius: var(--radius-sm);"></div>
                         {% endif %}
                     </td>
                     <td data-label="Nome" 
