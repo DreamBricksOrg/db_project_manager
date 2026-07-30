@@ -1,3 +1,10 @@
+# OOH Project Manager
+#
+# O Traefik está sob o profile "proxy", então ele não sobe por acidente em
+# desenvolvimento (onde ocupar as portas 80/443 atrapalha). No servidor, ponha
+#   COMPOSE_PROFILES=proxy
+# no .env e `docker compose up -d` passa a incluir o proxy normalmente.
+
 services:
   app:
     build:
@@ -5,15 +12,15 @@ services:
       network: host
     container_name: ooh_manager_app
     ports:
-      # Bind to loopback by default. Put a TLS-terminating reverse proxy in
-      # front of this; set APP_BIND=0.0.0.0 only if you know it is safe.
+      # Loopback apenas. Com o Traefik ativo, o tráfego público não passa por
+      # aqui — esta publicação serve para diagnóstico local
+      # (curl http://127.0.0.1:5000/healthz).
       - "${APP_BIND:-127.0.0.1}:${APP_PORT:-5000}:5000"
     env_file: .env
     environment:
-      # Credentials are passed separately, NOT interpolated into the URI: a
-      # password containing '@', ':', '/', '?', '#' or '%' would corrupt the
-      # connection string, and the failure surfaces as an unreachable host
-      # rather than an authentication error.
+      # As credenciais vão separadas, NÃO interpoladas na URI: uma senha com
+      # '@', ':', '/', '?', '#' ou '%' corromperia a string de conexão, e a
+      # falha apareceria como host inacessível em vez de erro de autenticação.
       MONGODB_URI: mongodb://mongodb:${MONGODB_PORT:-27020}/${MONGO_DB:-ooh_manager_db}
       MONGO_USER: ${MONGO_USER:?set MONGO_USER in .env}
       MONGO_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD in .env}
@@ -24,7 +31,7 @@ services:
       - ./secrets:/app/secrets:ro
     depends_on:
       mongodb:
-        # Wait for Mongo to actually answer, not merely to have been started.
+        # Espera o Mongo realmente responder, não apenas ter sido iniciado.
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=5).status == 200 else 1)"]
@@ -33,14 +40,53 @@ services:
       start_period: 20s
       retries: 3
     restart: unless-stopped
+    labels:
+      # Só têm efeito quando o serviço traefik está no ar; inofensivas fora disso.
+      - traefik.enable=true
+
+      # ── Roteador principal ──────────────────────────────────────────────
+      - traefik.http.routers.ooh.rule=Host(`${APP_DOMAIN:-projectmanager.dbpe.com.br}`)
+      - traefik.http.routers.ooh.entrypoints=websecure
+      - traefik.http.routers.ooh.tls=true
+      - traefik.http.routers.ooh.tls.certresolver=le
+      - traefik.http.routers.ooh.middlewares=ooh-secure
+      - traefik.http.services.ooh.loadbalancer.server.port=5000
+      - traefik.http.services.ooh.loadbalancer.healthcheck.path=/healthz
+      - traefik.http.services.ooh.loadbalancer.healthcheck.interval=30s
+
+      # ── Roteador só para /login, com limite de taxa ──────────────────────
+      # O throttling da aplicação é por processo: com 4 workers Gunicorn cada
+      # um mantém seu próprio contador, então o limite efetivo é 4x o
+      # configurado. Aqui ele passa a valer para o serviço inteiro.
+      - traefik.http.routers.ooh-login.rule=Host(`${APP_DOMAIN:-projectmanager.dbpe.com.br}`) && Path(`/login`)
+      - traefik.http.routers.ooh-login.priority=100
+      - traefik.http.routers.ooh-login.entrypoints=websecure
+      - traefik.http.routers.ooh-login.tls=true
+      - traefik.http.routers.ooh-login.tls.certresolver=le
+      - traefik.http.routers.ooh-login.middlewares=ooh-secure,ooh-login-ratelimit
+      - traefik.http.routers.ooh-login.service=ooh
+
+      - traefik.http.middlewares.ooh-login-ratelimit.ratelimit.average=10
+      - traefik.http.middlewares.ooh-login-ratelimit.ratelimit.period=1m
+      - traefik.http.middlewares.ooh-login-ratelimit.ratelimit.burst=5
+
+      # ── Cabeçalhos de segurança ─────────────────────────────────────────
+      # HSTS: o navegador honra o prazo inteiro e passa a recusar HTTP neste
+      # domínio. Se quiser cautela na estreia, use stsSeconds=300 e só suba
+      # para 31536000 depois de confirmar que o TLS está estável.
+      - traefik.http.middlewares.ooh-secure.headers.stsSeconds=31536000
+      - traefik.http.middlewares.ooh-secure.headers.stsIncludeSubdomains=false
+      - traefik.http.middlewares.ooh-secure.headers.stsPreload=false
+      - traefik.http.middlewares.ooh-secure.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.ooh-secure.headers.frameDeny=true
+      - traefik.http.middlewares.ooh-secure.headers.referrerPolicy=strict-origin-when-cross-origin
 
   mongodb:
     image: mongo:7
     container_name: ooh_manager_db
-    # No `ports:` mapping. The database is reachable from the app over the
-    # compose network and must not be exposed on the host. For local
-    # inspection use `docker compose exec mongodb mongosh`, or add a port
-    # mapping temporarily.
+    # Sem mapeamento de `ports:`. O banco é alcançável pela rede do compose e
+    # não deve ficar exposto no host. Para inspeção use
+    # `docker compose exec mongodb mongosh`.
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD in .env}
@@ -55,8 +101,71 @@ services:
       start_period: 20s
       retries: 5
     restart: unless-stopped
+    labels:
+      - traefik.enable=false
+
+  # ── Reverse proxy com TLS automático (Let's Encrypt) ────────────────────
+  # Substitui Nginx + Certbot. Equivalências com a config anterior:
+  #   listen 443 ssl + ssl_certificate    -> entrypoint websecure + certresolver
+  #   return 301 https://...              -> redirections.entrypoint em web
+  #   proxy_set_header X-Forwarded-*      -> automático
+  #   proxy_set_header Upgrade/Connection -> automático (WebSocket nativo)
+  #   client_max_body_size 100M           -> MAX_UPLOAD_MB=100 no .env
+  #
+  # Antes de subir: pare o Nginx (systemctl stop nginx && systemctl disable
+  # nginx). As portas 80 e 443 precisam estar livres, e o desafio HTTP-01 do
+  # Let's Encrypt exige a 80 acessível pela internet.
+  traefik:
+    image: traefik:v3.1
+    container_name: ooh_manager_proxy
+    profiles: ["proxy"]
+    restart: unless-stopped
+    command:
+      # Descobre serviços pelas labels, mas só os que optarem explicitamente.
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+
+      # Todo HTTP vira HTTPS, equivalente ao `return 301` que o Certbot criou.
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+
+      # Não confia em X-Forwarded-* vindos do cliente: sem isso alguém poderia
+      # forjar o IP de origem, que é a chave do throttling de login.
+      - --entrypoints.web.forwardedheaders.insecure=false
+      - --entrypoints.websecure.forwardedheaders.insecure=false
+
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+
+      - --log.level=INFO
+      - --accesslog=true
+      # Dashboard desligado: sem autenticação, revela toda a topologia de rotas.
+      - --api.dashboard=false
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Somente leitura. Ainda assim, acesso ao socket do Docker equivale a
+      # root no host — se isso incomodar, troque por um socket proxy
+      # (tecnativa/docker-socket-proxy) expondo apenas /containers.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/letsencrypt
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - app
 
 volumes:
   mongodb_data:
   app_data:
   app_uploads:
+  traefik_acme:

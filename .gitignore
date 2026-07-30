@@ -137,6 +137,10 @@ celerybeat.pid
 # Environments
 .env
 .envrc
+# Qualquer variante (.env.local, .env.bak-*, .env.prod...) carrega segredos.
+# O template é a única exceção.
+.env.*
+!.env.example
 .venv
 env/
 venv/
