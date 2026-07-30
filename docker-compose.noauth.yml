@@ -3,14 +3,23 @@
 # O Mongo só processa MONGO_INITDB_ROOT_USERNAME/PASSWORD quando o diretório de
 # dados está vazio. Num volume existente essas variáveis são ignoradas, então o
 # usuário precisa ser criado à mão — e para isso o servidor tem que subir sem
-# --auth uma única vez.
+# autenticação uma única vez.
+#
+# ATENÇÃO: não basta remover --auth do command. O entrypoint da imagem oficial
+# acrescenta --auth por conta própria sempre que MONGO_INITDB_ROOT_USERNAME e
+# MONGO_INITDB_ROOT_PASSWORD estão definidas. Por isso este override também as
+# esvazia; caso contrário a autenticação volta sozinha e o createUser falha com
+# "not authorized".
 #
 # NÃO se chama docker-compose.override.yml de propósito: esse nome seria
 # carregado automaticamente e deixaria o banco sem autenticação sem ninguém
 # perceber. Aqui é preciso passar -f explicitamente.
 #
-# Uso:
-#   docker compose -f docker-compose.yml -f docker-compose.noauth.yml up -d mongodb
+# Uso (o --force-recreate é obrigatório: sem ele o compose apenas reinicia o
+# container existente, mantendo a configuração antiga):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.noauth.yml \
+#     up -d --force-recreate mongodb
 #   ... cria o usuário ...
 #   docker compose up -d --force-recreate mongodb    # volta com --auth
 #
@@ -19,4 +28,8 @@
 
 services:
   mongodb:
+    environment:
+      # Vazias = o entrypoint não liga --auth.
+      MONGO_INITDB_ROOT_USERNAME: ""
+      MONGO_INITDB_ROOT_PASSWORD: ""
     command: ["--port", "${MONGODB_PORT:-27020}"]

@@ -83,16 +83,82 @@ class TestHealthcheck:
         assert resp.status_code == 200
         assert resp.get_json()['status'] == 'ok'
 
-    def test_healthz_reports_error_when_mongo_is_down(self, app, monkeypatch):
+    def test_healthz_distinguishes_unreachable_from_bad_credentials(self, app, monkeypatch):
+        """A wrong password and a dead host must not look identical.
+
+        Reporting both as "unreachable" sends whoever is on call to inspect
+        the network when the real problem is a credential.
+        """
+        from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
+
+        from app import database
+
+        cases = [
+            (ServerSelectionTimeoutError('no route to host'), 'unreachable'),
+            (OperationFailure('Authentication failed.'), 'auth_failed'),
+            (RuntimeError('something else entirely'), 'error'),
+        ]
+
+        for exc, expected in cases:
+            def boom(_exc=exc):
+                raise _exc
+
+            monkeypatch.setattr(database, 'get_client', boom)
+            resp = app.test_client().get('/healthz')
+            assert resp.status_code == 503
+            assert resp.get_json()['database'] == expected
+
+
+class TestConnectionCredentials:
+    def test_password_with_special_characters_is_not_interpolated(self, monkeypatch):
+        """Credentials go to MongoClient as parameters, never into the URI.
+
+        A password containing '@' terminates the userinfo section of a
+        connection string, so the driver reads the wrong host and the failure
+        surfaces as an unreachable server instead of a bad password.
+        """
         import app.database as database
 
-        def boom():
-            raise RuntimeError('connection refused')
+        captured = {}
 
-        monkeypatch.setattr(database, 'get_client', boom)
-        resp = app.test_client().get('/healthz')
-        assert resp.status_code == 503
-        assert resp.get_json()['database'] == 'unreachable'
+        class FakeClient:
+            def __init__(self, uri, **options):
+                captured['uri'] = uri
+                captured['options'] = options
+
+        monkeypatch.setattr(database, 'MongoClient', FakeClient)
+        monkeypatch.setattr(database, '_client', None)
+        monkeypatch.setenv('MONGODB_URI', 'mongodb://mongodb:27020/ooh_manager_db')
+        monkeypatch.setenv('MONGO_USER', 'dreambricks')
+        monkeypatch.setenv('MONGO_PASSWORD', 'HP365@pm')
+
+        database.get_client()
+
+        assert 'HP365@pm' not in captured['uri']
+        assert captured['options']['username'] == 'dreambricks'
+        assert captured['options']['password'] == 'HP365@pm'
+        assert captured['options']['authSource'] == 'admin'
+
+        monkeypatch.setattr(database, '_client', None)
+
+    def test_no_credentials_means_no_auth_options(self, monkeypatch):
+        import app.database as database
+
+        captured = {}
+
+        class FakeClient:
+            def __init__(self, uri, **options):
+                captured['options'] = options
+
+        monkeypatch.setattr(database, 'MongoClient', FakeClient)
+        monkeypatch.setattr(database, '_client', None)
+        monkeypatch.delenv('MONGO_USER', raising=False)
+        monkeypatch.delenv('MONGO_PASSWORD', raising=False)
+
+        database.get_client()
+
+        assert 'username' not in captured['options']
+        monkeypatch.setattr(database, '_client', None)
 
 
 class TestUploadValidation:

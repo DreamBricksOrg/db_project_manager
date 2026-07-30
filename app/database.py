@@ -24,20 +24,35 @@ _client_lock = Lock()
 
 
 def get_client() -> MongoClient:
-    """Return the process-wide MongoClient, creating it on first use."""
+    """Return the process-wide MongoClient, creating it on first use.
+
+    Credentials are passed as parameters rather than embedded in the URI.
+    Interpolating them into a connection string silently breaks on any
+    password containing '@', ':', '/', '?', '#' or '%' — and the resulting
+    failure looks like an unreachable host, not a bad password.
+    """
     global _client
     if _client is None:
         with _client_lock:
             if _client is None:
                 uri = os.getenv('MONGODB_URI', DEFAULT_URI)
-                _client = MongoClient(
-                    uri,
-                    maxPoolSize=int(os.getenv('MONGODB_MAX_POOL_SIZE', '50')),
-                    serverSelectionTimeoutMS=int(
+
+                options = {
+                    'maxPoolSize': int(os.getenv('MONGODB_MAX_POOL_SIZE', '50')),
+                    'serverSelectionTimeoutMS': int(
                         os.getenv('MONGODB_SERVER_SELECTION_TIMEOUT_MS', '5000')
                     ),
-                    tz_aware=True,
-                )
+                    'tz_aware': True,
+                }
+
+                user = os.getenv('MONGO_USER', '').strip()
+                password = os.getenv('MONGO_PASSWORD', '').strip()
+                if user and password:
+                    options['username'] = user
+                    options['password'] = password
+                    options['authSource'] = os.getenv('MONGO_AUTH_SOURCE', 'admin')
+
+                _client = MongoClient(uri, **options)
     return _client
 
 

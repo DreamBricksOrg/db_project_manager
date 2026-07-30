@@ -152,12 +152,25 @@ def create_app(config_class=Config):
 
     @app.route('/healthz')
     def healthz():
-        """Liveness/readiness probe: confirms the process can reach MongoDB."""
+        """Liveness/readiness probe: confirms the process can reach MongoDB.
+
+        Authentication failures are reported distinctly from connectivity
+        failures — collapsing both into "unreachable" sends you looking at the
+        network when the real problem is a credential.
+        """
+        from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
+
         try:
             database.get_client().admin.command('ping')
+        except OperationFailure as exc:
+            logger.error('Health check: MongoDB rejected our credentials: %s', exc)
+            return jsonify(status='error', database='auth_failed'), 503
+        except ServerSelectionTimeoutError as exc:
+            logger.error('Health check: could not reach MongoDB: %s', exc)
+            return jsonify(status='error', database='unreachable'), 503
         except Exception:
             logger.exception('Health check failed')
-            return jsonify(status='error', database='unreachable'), 503
+            return jsonify(status='error', database='error'), 503
         return jsonify(status='ok', database='ok'), 200
 
     @app.route('/manifest.webmanifest')
