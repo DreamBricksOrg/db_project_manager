@@ -20,6 +20,7 @@
             <h3>Conta Conectada</h3>
             <p style="color: var(--color-slate); margin-bottom: 24px;">{{ email }}</p>
             <form action="{{ url_for('drive.disconnect') }}" method="POST" data-confirm="Deseja realmente desconectar o Google Drive? Os uploads futuros não serão sincronizados até que você conecte novamente." style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     Desconectar Drive

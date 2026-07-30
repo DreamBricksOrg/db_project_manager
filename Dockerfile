@@ -43,7 +43,21 @@ RUN mkdir -p data app/static/uploads secrets \
 
 USER app
 
+# Fail fast and unbuffered, so logs reach the container runtime immediately.
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
 EXPOSE 5000
 
-# Gunicorn for production (4 workers, graceful timeout)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "run:app"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000/healthz', timeout=5).status == 200 else 1)"
+
+# Gunicorn for production. Access logs go to stdout so `docker logs` shows them.
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:5000", \
+     "--workers", "4", \
+     "--timeout", "120", \
+     "--graceful-timeout", "30", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "run:app"]

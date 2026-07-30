@@ -1,8 +1,18 @@
-flask>=3.0.0
-xhtml2pdf
-pymongo
-python-dotenv
-gunicorn>=22.0.0
-Pillow>=10.0.0
-google-api-python-client>=2.0.0
-google-auth-oauthlib>=1.0.0
+# Direct dependencies, capped at the next major version so an upstream breaking
+# release cannot land silently on the next image rebuild.
+#
+# For byte-identical rebuilds, compile this into a fully pinned lock file:
+#   pip install pip-tools
+#   pip-compile requirements.txt -o requirements.lock
+# and install from requirements.lock in the Dockerfile.
+
+Flask>=3.0.0,<4.0.0
+Flask-WTF>=1.2.1,<2.0.0          # CSRF protection
+Werkzeug>=3.0.3,<4.0.0           # password hashing; 3.0.3 fixes CVE-2024-34069
+pymongo>=4.6.3,<5.0.0
+python-dotenv>=1.0.0,<2.0.0
+gunicorn>=22.0.0,<24.0.0
+Pillow>=10.3.0,<12.0.0           # 10.3.0 fixes CVE-2024-28219
+xhtml2pdf>=0.2.15,<0.3.0
+google-api-python-client>=2.100.0,<3.0.0
+google-auth-oauthlib>=1.2.0,<2.0.0

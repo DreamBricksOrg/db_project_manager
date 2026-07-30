@@ -290,6 +290,7 @@
             <span id="lightboxLocation"></span>
         </div>
         <form id="lightboxDeleteForm" method="POST" style="margin-left:auto;" data-confirm="Excluir esta foto?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
         </form>
     </div>

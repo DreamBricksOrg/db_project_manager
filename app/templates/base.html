@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#034a5d">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="{{ url_for('manifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/dreambricks_logo_250x160.png') }}">
     <title>{% block title %}OOH Manager{% endblock %}</title>
@@ -256,6 +257,45 @@
                 closeLightbox();
             }
         });
+    </script>
+
+    <script>
+        // ── CSRF for programmatic requests ───────────────────────────────
+        // Plain <form> posts carry a hidden csrf_token field. fetch() and htmx
+        // requests do not, so attach the token as a header once, globally,
+        // instead of remembering to do it at every call site.
+        (function () {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (!meta) return;
+            const token = meta.getAttribute('content');
+            const SAFE = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
+
+            // htmx
+            document.body.addEventListener('htmx:configRequest', function (evt) {
+                if (!SAFE.includes((evt.detail.verb || 'GET').toUpperCase())) {
+                    evt.detail.headers['X-CSRFToken'] = token;
+                }
+            });
+
+            // fetch — same-origin, state-changing requests only
+            const nativeFetch = window.fetch;
+            window.fetch = function (input, init) {
+                init = init || {};
+                const method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+                let sameOrigin = true;
+                try {
+                    const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
+                    sameOrigin = url.origin === window.location.origin;
+                } catch (e) { /* relative URL: same origin */ }
+
+                if (!SAFE.includes(method) && sameOrigin) {
+                    const headers = new Headers(init.headers || (typeof input === 'object' && input.headers) || {});
+                    if (!headers.has('X-CSRFToken')) headers.set('X-CSRFToken', token);
+                    init = Object.assign({}, init, { headers: headers });
+                }
+                return nativeFetch.call(this, input, init);
+            };
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>

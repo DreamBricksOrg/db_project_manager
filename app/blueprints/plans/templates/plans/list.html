@@ -186,6 +186,7 @@
                     {% if session.get('role') == 'admin' %}
                     <form method="POST" action="{{ url_for('plans.delete_plan', id=plan.id) }}" style="display: inline;"
                         data-confirm="Tem certeza que deseja remover este plano?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
                     </form>
                     {% endif %}

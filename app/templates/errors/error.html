@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{#
+  Single parameterized error page. base.html renders `content` only for
+  logged-in users and `login_content` otherwise, so both blocks are filled to
+  stay visible in either state.
+
+  Expects: code, heading, message
+#}
+
+{% set _body %}
+<div class="card" style="max-width: 620px; margin: 4rem auto; text-align: center;">
+    <div class="card-body" style="padding: 3rem 2rem;">
+        <div style="font-size: 4rem; font-weight: 700; color: var(--color-teal); line-height: 1;">{{ code }}</div>
+        <h1 style="margin: 1rem 0 0.5rem; color: var(--color-navy);">{{ heading }}</h1>
+        <p style="color: var(--color-slate); margin-bottom: 2rem;">{{ message }}</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar ao início</a>
+    </div>
+</div>
+{% endset %}
+
+{% block title %}{{ code }} — {{ heading }}{% endblock %}
+
+{% block content %}{{ _body }}{% endblock %}
+
+{% block login_content %}
+<div class="container">{{ _body }}</div>
+{% endblock %}

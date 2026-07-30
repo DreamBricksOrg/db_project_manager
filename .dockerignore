@@ -26,6 +26,17 @@ env
 mongodb_data
 data
 
+# Secrets are bind-mounted at runtime; never bake them into an image layer.
+secrets
+.env
+.env.*
+!.env.example
+
+# Tests and dev tooling
+tests
+scripts
+pytest.ini
+
 # Docker files
 Dockerfile
 docker-compose.yml

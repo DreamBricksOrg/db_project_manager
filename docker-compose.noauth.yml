@@ -1,0 +1,22 @@
+# Override TEMPORÁRIO para habilitar autenticação em um volume que já tem dados.
+#
+# O Mongo só processa MONGO_INITDB_ROOT_USERNAME/PASSWORD quando o diretório de
+# dados está vazio. Num volume existente essas variáveis são ignoradas, então o
+# usuário precisa ser criado à mão — e para isso o servidor tem que subir sem
+# --auth uma única vez.
+#
+# NÃO se chama docker-compose.override.yml de propósito: esse nome seria
+# carregado automaticamente e deixaria o banco sem autenticação sem ninguém
+# perceber. Aqui é preciso passar -f explicitamente.
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.noauth.yml up -d mongodb
+#   ... cria o usuário ...
+#   docker compose up -d --force-recreate mongodb    # volta com --auth
+#
+# Enquanto este override estiver ativo o banco aceita conexões sem senha.
+# Mantenha a janela curta e não faça isso com a porta exposta na rede.
+
+services:
+  mongodb:
+    command: ["--port", "${MONGODB_PORT:-27020}"]

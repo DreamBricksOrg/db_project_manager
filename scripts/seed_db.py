@@ -1,6 +1,17 @@
+"""Seed the database with fake data for local development."""
 
+import sys
+from pathlib import Path
+
+# Allow running this script directly from the scripts/ directory.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import os
 import random
+
 from faker import Faker
+
+from app.security import hash_password
 from app.repositories import (
     users_repo, clients_repo, contacts_repo, producers_repo,
     installers_repo, services_repo, materials_repo,
@@ -11,6 +22,10 @@ from app import create_app
 app = create_app()
 fake = Faker('pt_BR')
 
+# Shared password for every seeded account. Development only — this script
+# should never be pointed at a real database.
+SEED_PASSWORD = os.environ.get('SEED_PASSWORD', 'devpassword123')
+
 def seed_users(count=10):
     print(f"Seeding {count} users...")
     roles = ['admin', 'user']
@@ -18,13 +33,13 @@ def seed_users(count=10):
         user = {
             'nome': fake.name(),
             'username': fake.user_name(),
-            'password': '123',  # Default password
+            # Seeded users get a hashed password like any other account, so the
+            # seeded database exercises the same login path as production.
+            'password': hash_password(SEED_PASSWORD),
             'role': random.choice(roles),
             'active': True
         }
-        # Check for duplicates not needed for seeding script usually, but good practice
-        existing = next((u for u in users_repo.get_all() if u.get('username') == user['username']), None)
-        if not existing:
+        if not users_repo.find_one_by('username', user['username']):
             users_repo.create(user)
 
 def seed_clients(count=10):

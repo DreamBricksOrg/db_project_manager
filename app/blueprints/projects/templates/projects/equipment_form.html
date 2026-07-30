@@ -8,6 +8,7 @@
     </div>
 
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Lista de Equipamentos</span>

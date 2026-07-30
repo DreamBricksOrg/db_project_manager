@@ -1,0 +1,7 @@
+# Development and test dependencies. Not installed in the production image.
+-r requirements.txt
+
+pytest>=8.0.0,<9.0.0
+mongomock>=4.1.2,<5.0.0     # runs the suite without a MongoDB server
+Faker>=24.0.0,<40.0.0       # used by scripts/seed_db.py
+ruff>=0.4.0,<1.0.0

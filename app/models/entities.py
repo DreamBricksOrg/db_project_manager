@@ -12,7 +12,7 @@ def generate_id() -> str:
 class User:
     id: str
     username: str
-    password: str  # Plain text for MVP, hash in production
+    password: str  # PBKDF2 hash — see app.security.hash_password
     role: str  # 'admin' or 'user'
     nome: str = ''
 

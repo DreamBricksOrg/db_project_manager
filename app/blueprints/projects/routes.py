@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from datetime import datetime
@@ -7,7 +8,10 @@ from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 from app.blueprints.projects import projects_bp
 from app.blueprints.auth.routes import login_required
+from app.querying import merge_filters, paginate_query, read_page, read_sort, text_filter
 from app.repositories import projects_repo, plans_repo, graphics_repo, equipment_repo, installation_photos_repo
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'}
 
@@ -28,14 +32,16 @@ PROJECT_TO_PLAN_FIELD_MAP = {
 
 def _sync_project_to_plan(project_id: str, project_data: dict) -> None:
     """After saving a project, propagate shared fields to the linked plan."""
-    linked_plan = next((p for p in plans_repo.get_all() if p.get('project_id') == project_id), None)
+    # Indexed lookup on project_id, rather than scanning every plan in memory.
+    linked_plan = plans_repo.find_one_by('project_id', project_id)
     if not linked_plan:
         return
     updates = {plan_field: project_data[proj_field]
                for proj_field, plan_field in PROJECT_TO_PLAN_FIELD_MAP.items()
                if proj_field in project_data}
     if updates:
-        plans_repo.update(linked_plan['id'], {**linked_plan, **updates})
+        # $set only the changed fields; no need to rewrite the whole document.
+        plans_repo.update(linked_plan['id'], updates)
 
 
 def allowed_file(filename):
@@ -57,77 +63,50 @@ def parse_date_br(br_date):
     except ValueError:
         return br_date
 
+PROJECT_SEARCH_FIELDS = ('nome', 'cliente', 'endereco', 'descricao')
+
+PROJECT_SORT_FIELDS = {
+    'nome': 'nome',
+    'cliente': 'cliente',
+    'data': 'data_instalacao',
+    'status': 'status',
+}
+
+STATUS_OPTIONS = ['Não Iniciado', 'Em Andamento', 'Testes', 'Instalado', 'Concluído']
+
+
 @projects_bp.route('/')
 @login_required
 def list_projects():
-    q = request.args.get('q', '').strip().lower()
+    q = request.args.get('q', '').strip()
     status_filter = request.args.get('status', '')
-    
-    projects = projects_repo.get_all()
-    
-    # Filter
-    filtered = []
-    for p in projects:
-        if status_filter and p.get('status', '') != status_filter:
-            continue
-        if q:
-            searchable = ' '.join([
-                p.get('nome', ''), p.get('cliente', ''),
-                p.get('endereco', ''), p.get('descricao', ''),
-            ]).lower()
-            if q not in searchable:
-                continue
-        filtered.append(p)
-    
-    # Sort (before date formatting)
-    sort_by = request.args.get('sort_by', '')
-    sort_dir = request.args.get('sort_dir', 'asc')
-    
-    SORT_KEYS = {
-        'nome': lambda p: (p.get('nome') or '').lower(),
-        'cliente': lambda p: (p.get('cliente') or '').lower(),
-        'data': lambda p: p.get('data_instalacao') or '',
-        'status': lambda p: (p.get('status') or '').lower(),
-    }
-    if sort_by in SORT_KEYS:
-        filtered.sort(key=SORT_KEYS[sort_by], reverse=(sort_dir == 'desc'))
-    
-    total_items = len(filtered)
-    
-    # Format dates for display
-    for p in filtered:
+
+    # Filtering, sorting and pagination all run inside MongoDB; only one page
+    # of documents is ever loaded into memory.
+    filters = merge_filters(
+        {'status': status_filter} if status_filter else {},
+        text_filter(q, PROJECT_SEARCH_FIELDS),
+    )
+    sort_by, sort_dir, sort = read_sort(PROJECT_SORT_FIELDS, default=[('nome', 1)])
+    page, per_page = read_page((12, 24, 48))
+
+    pg = paginate_query(projects_repo, filters, sort, page, per_page)
+
+    # Format dates for display (only the current page)
+    for p in pg['items']:
         p['data_instalacao'] = format_date_br(p.get('data_instalacao', ''))
-    
-    # Pagination
-    ALLOWED_PER_PAGE = [12, 24, 48]
-    try:
-        per_page = int(request.args.get('per_page', 12))
-    except (ValueError, TypeError):
-        per_page = 12
-    if per_page not in ALLOWED_PER_PAGE:
-        per_page = 12
-    
-    try:
-        page = max(1, int(request.args.get('page', 1)))
-    except (ValueError, TypeError):
-        page = 1
-    total_pages = max(1, (total_items + per_page - 1) // per_page)
-    page = min(page, total_pages)
-    paginated = filtered[(page - 1) * per_page : page * per_page]
-    
-    status_options = ['Não Iniciado', 'Em Andamento', 'Testes', 'Instalado', 'Concluído']
-    
+
     return render_template('projects/list.html',
-                         projects=paginated,
-                         total_items=total_items,
-                         page=page,
-                         total_pages=total_pages,
-                         per_page=per_page,
+                         projects=pg['items'],
+                         total_items=pg['total_items'],
+                         page=pg['page'],
+                         total_pages=pg['total_pages'],
+                         per_page=pg['per_page'],
                          sort_by=sort_by,
                          sort_dir=sort_dir,
                          q=q,
                          status_filter=status_filter,
-                         status_options=status_options)
+                         status_options=STATUS_OPTIONS)
 
 @projects_bp.route('/new', methods=['GET', 'POST'])
 @login_required
@@ -370,6 +349,23 @@ def save_project(id):
         return redirect(url_for('projects.view_project', id=new_proj['id']))
 
 
+def _is_valid_image(image_file) -> bool:
+    """True if the uploaded bytes actually decode as an image.
+
+    Pillow's verify() parses the container without loading the full raster, so
+    this is cheap and rejects files that merely carry an image extension.
+    """
+    try:
+        image_file.seek(0)
+        Image.open(image_file).verify()
+        return True
+    except Exception:
+        logger.warning('Rejected upload %r: not a decodable image', image_file.filename)
+        return False
+    finally:
+        image_file.seek(0)
+
+
 def _extract_exif(image_file):
     """Extract date, device, GPS from image EXIF data."""
     result = {'datetime': None, 'device': None, 'latitude': None, 'longitude': None}
@@ -442,12 +438,18 @@ def upload_photo(id):
     f = request.files['photo']
     if not f or not allowed_file(f.filename):
         return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
-    
+
+    # A trusted extension is not proof of file type. Decode the bytes before
+    # writing anything to the uploads directory. PDFs are allowed here too, so
+    # only image types go through Pillow.
+    ext = f.filename.rsplit('.', 1)[-1].lower()
+    if ext != 'pdf' and not _is_valid_image(f):
+        return jsonify({'error': 'O arquivo enviado não é uma imagem válida'}), 400
+
     # Extract EXIF before saving
     exif = _extract_exif(f)
-    
+
     # Save file
-    ext = f.filename.rsplit('.', 1)[-1].lower()
     fname = secure_filename(f"install_{id}_{uuid.uuid4().hex[:8]}.{ext}")
     f.save(os.path.join(current_app.config['UPLOAD_DIR'], fname))
     
@@ -485,8 +487,10 @@ def upload_photo(id):
         drive_pasta = project.get('drive_pasta', '')
         filepath = os.path.join(current_app.config['UPLOAD_DIR'], fname)
         drive_info = upload_to_drive(project_name, filepath, fname, drive_pasta=drive_pasta or None)
-    except Exception as e:
-        print(f'[Drive] Upload skipped: {e}')
+    except Exception:
+        # Drive sync is best-effort: the photo is already stored locally and
+        # can be re-synced later from the gallery.
+        logger.exception('Drive upload skipped for photo %s of project %s', fname, id)
 
     if drive_info:
         photo_data['drive_file_id'] = drive_info.get('file_id')
@@ -545,9 +549,14 @@ def sync_photo_drive(id, photo_id):
             })
         else:
             return jsonify({'success': False, 'error': 'Falha no upload para o Drive'}), 500
-    except Exception as e:
-        print(f'[Drive Sync Error] {e}')
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception:
+        # Log the detail server-side; the client gets a generic message so an
+        # internal error string never reaches the browser.
+        logger.exception('Drive sync failed for photo %s of project %s', photo_id, id)
+        return jsonify({
+            'success': False,
+            'error': 'Falha ao sincronizar com o Google Drive.',
+        }), 500
 
 
 @projects_bp.route('/<id>/photos/<photo_id>/delete', methods=['POST'])

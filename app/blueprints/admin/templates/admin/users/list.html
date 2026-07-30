@@ -65,6 +65,7 @@
                         <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-sm btn-secondary">Editar</a>
                         {% if user.username != 'admin' %}
                         <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
                         </form>
                         {% endif %}

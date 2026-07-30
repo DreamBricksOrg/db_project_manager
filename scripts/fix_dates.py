@@ -1,4 +1,11 @@
 """Fix mock project data: dates and statuses."""
+
+import sys
+from pathlib import Path
+
+# Allow running this script directly from the scripts/ directory.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import random
 from datetime import date, timedelta
 from app.repositories import projects_repo, plans_repo

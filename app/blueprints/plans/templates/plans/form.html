@@ -8,6 +8,7 @@
 </div>
 
 <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% if plan and plan.project_id %}
     <input type="hidden" name="project_id" value="{{ plan.project_id }}">
     {% endif %}
@@ -357,6 +358,7 @@
             Os seguintes dados serão salvos: descrição, serviços externos, materiais, ferramentas, equipamentos e informações importantes.
         </p>
         <form method="POST" action="{{ url_for('plans.save_template', id=plan.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label class="form-label" for="template_name">Nome do Template *</label>
                 <input type="text" id="template_name" name="template_name" class="form-input" 

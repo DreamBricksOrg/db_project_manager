@@ -9,6 +9,7 @@
 
 <div class="card">
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label class="form-label" for="tipo_servico">Tipo de Serviço *</label>
             <input type="text" id="tipo_servico" name="tipo_servico" class="form-input"

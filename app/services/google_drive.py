@@ -1,9 +1,16 @@
+import logging
 from pathlib import Path
+
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+logger = logging.getLogger(__name__)
+
+# Full-Drive scope, needed because the app looks up pre-existing folders by
+# name. If folder selection is ever reworked to only use folders this app
+# created, narrow this to '.../auth/drive.file'.
 SCOPES = ['https://www.googleapis.com/auth/drive']
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRETS_DIR = BASE_DIR / 'secrets'
@@ -110,8 +117,8 @@ def upload_to_drive(project_name, filepath, filename, drive_pasta=None):
             'file_id': uploaded.get('id'),
             'web_link': uploaded.get('webViewLink')
         }
-    except Exception as e:
-        print(f'[Drive] Upload failed: {e}')
+    except Exception:
+        logger.exception('Drive upload failed for %s', filename)
         return None
 
 

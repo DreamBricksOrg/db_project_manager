@@ -1,8 +1,9 @@
 """Plans Routes - Installation plans management"""
 
-import os
-import io
 import calendar
+import io
+import logging
+import os
 from datetime import datetime, date
 from flask import render_template, redirect, url_for, request, flash, current_app, send_file, jsonify
 from werkzeug.utils import secure_filename
@@ -10,11 +11,23 @@ from xhtml2pdf import pisa
 
 from app.blueprints.plans import plans_bp
 from app.blueprints.auth.routes import login_required, admin_required
+from app.querying import merge_filters, read_page, read_sort, text_filter
 from app.repositories import (
-    plans_repo, contacts_repo, producers_repo, 
+    plans_repo, contacts_repo, producers_repo,
     installers_repo, services_repo, materials_repo,
     tools_repo, equipment_repo, projects_repo, plan_templates_repo
 )
+
+logger = logging.getLogger(__name__)
+
+# Public sort key -> document field. Doubles as an allowlist so an arbitrary
+# field name from the query string never reaches the database.
+PLAN_SORT_FIELDS = {
+    'projeto': 'nome_projeto',
+    'cliente': 'cliente',
+    'data': 'data_instalacao',
+    'endereco': 'endereco',
+}
 
 # Fields mirrored between Plan and Project (plan_field -> project_field)
 PLAN_TO_PROJECT_FIELD_MAP = {
@@ -40,7 +53,8 @@ def _sync_plan_to_project(project_id: str, plan_data: dict) -> None:
                for plan_field, proj_field in PLAN_TO_PROJECT_FIELD_MAP.items()
                if plan_field in plan_data}
     if updates:
-        projects_repo.update(project_id, {**project, **updates})
+        # $set only what changed instead of rewriting the whole document.
+        projects_repo.update(project_id, updates)
 
 # Status colors for the Gantt chart
 STATUS_COLORS = {
@@ -51,6 +65,9 @@ STATUS_COLORS = {
     'Concluído': '#11f018',
 }
 
+DEFAULT_PLAN_STATUS = 'Em Andamento'
+
+
 def get_plan_status(plan):
     """Derive status from plan data, fallback to project if older."""
     if 'status' in plan and plan['status']:
@@ -60,7 +77,35 @@ def get_plan_status(plan):
         project = projects_repo.get_by_id(project_id)
         if project and project.get('status'):
             return project['status']
-    return 'Em Andamento'
+    return DEFAULT_PLAN_STATUS
+
+
+def annotate_plan_statuses(plans):
+    """Set ``_status`` on every plan, resolving fallbacks in one extra query.
+
+    Calling :func:`get_plan_status` in a loop issues one project lookup per
+    plan that predates the status field. This resolves them all at once.
+    """
+    missing_ids = {
+        p['project_id'] for p in plans
+        if not p.get('status') and p.get('project_id')
+    }
+
+    project_status = {}
+    if missing_ids:
+        project_status = {
+            proj['id']: proj.get('status')
+            for proj in projects_repo.find({'id': {'$in': list(missing_ids)}})
+        }
+
+    for plan in plans:
+        if plan.get('status'):
+            plan['_status'] = plan['status']
+        else:
+            plan['_status'] = (
+                project_status.get(plan.get('project_id')) or DEFAULT_PLAN_STATUS
+            )
+    return plans
 
 
 def format_date_br(iso_date):
@@ -124,45 +169,46 @@ def list_plans():
         gantt_year = today.year
     
     days_in_month = calendar.monthrange(gantt_year, gantt_month)[1]
-    
-    plans = plans_repo.get_all()
-    all_installers = {i['id']: i['nome'].lower() for i in installers_repo.get_all()}
-    
-    filtered_plans = []
-    
-    for p in plans:
-        # Date Filter
-        p_date = p.get('data_instalacao', '')
-        if start_date and p_date and p_date < start_date:
-            continue
-        if end_date and p_date and p_date > end_date:
-            continue
-            
-        # Text Search
-        if q:
-            searchable_text = [
-                p.get('nome_projeto', ''),
-                p.get('cliente', ''),
-                p.get('contato_cliente', ''),
-                p.get('produtor_responsavel', ''),
-                p.get('endereco', ''),
-            ]
-            if isinstance(p.get('materiais'), list):
-                searchable_text.extend(p['materiais'])
-            if isinstance(p.get('instaladores'), list):
-                for inst_id in p['instaladores']:
-                    if inst_id in all_installers:
-                        searchable_text.append(all_installers[inst_id])
-            if not any(q in str(field).lower() for field in searchable_text):
-                continue
-        
-        # Status filter
-        p_status = get_plan_status(p)
-        p['_status'] = p_status
-        if status_filter and p_status != status_filter:
-            continue
-                
-        filtered_plans.append(p)
+
+    # ── Query ────────────────────────────────────────────────────────────
+    # Date range and free-text search run in MongoDB. Status cannot: it is
+    # derived (plan status, falling back to the linked project), so it is
+    # applied below — but only over the already-narrowed result set.
+    date_clauses = []
+    if start_date:
+        date_clauses.append({'$or': [
+            {'data_instalacao': {'$gte': start_date}},
+            {'data_instalacao': {'$in': [None, '']}},
+        ]})
+    if end_date:
+        date_clauses.append({'$or': [
+            {'data_instalacao': {'$lte': end_date}},
+            {'data_instalacao': {'$in': [None, '']}},
+        ]})
+
+    search_clause = {}
+    if q:
+        # Installers are stored as IDs on the plan, so resolve the names that
+        # match first and search by the resulting IDs.
+        matching_installer_ids = [
+            i['id'] for i in installers_repo.search('nome', q, limit=100)
+        ]
+        search_clause = text_filter(q, (
+            'nome_projeto', 'cliente', 'contato_cliente',
+            'produtor_responsavel', 'endereco', 'materiais',
+        ))
+        if matching_installer_ids:
+            search_clause['$or'].append({'instaladores': {'$in': matching_installer_ids}})
+
+    filters = merge_filters(*date_clauses, search_clause)
+
+    # Sorting happens in MongoDB, on the raw ISO dates, before any formatting.
+    sort_by, sort_dir, sort = read_sort(PLAN_SORT_FIELDS, default=[('data_instalacao', 1)])
+
+    filtered_plans = annotate_plan_statuses(plans_repo.find(filters, sort=sort))
+
+    if status_filter:
+        filtered_plans = [p for p in filtered_plans if p['_status'] == status_filter]
 
     # Build Gantt rows - only plans overlapping selected month
     month_start = date(gantt_year, gantt_month, 1)
@@ -214,43 +260,19 @@ def list_plans():
             'days': days,
         })
 
-    # Sorting (must happen BEFORE date formatting to sort on ISO dates)
-    sort_by = request.args.get('sort_by', '')
-    sort_dir = request.args.get('sort_dir', 'asc')
-    
-    SORT_KEYS = {
-        'projeto': lambda p: (p.get('nome_projeto') or '').lower(),
-        'cliente': lambda p: (p.get('cliente') or '').lower(),
-        'data': lambda p: p.get('data_instalacao') or '',
-        'endereco': lambda p: (p.get('endereco') or '').lower(),
-    }
-    
-    if sort_by in SORT_KEYS:
-        filtered_plans.sort(key=SORT_KEYS[sort_by], reverse=(sort_dir == 'desc'))
+    # Pagination. The derived-status filter above runs in Python, so the final
+    # count is only known here; the slice stays in Python for the same reason.
+    page, per_page = read_page((10, 25, 50))
+    total_items = len(filtered_plans)
+    total_pages = max(1, (total_items + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    paginated_plans = filtered_plans[(page - 1) * per_page: page * per_page]
 
-    # Format dates for display in the table (after sorting)
-    for p in filtered_plans:
+    # Format dates for display in the table (current page only)
+    for p in paginated_plans:
         raw = p.get('data_instalacao', '')
         if raw and '/' not in raw:
             p['data_instalacao'] = format_date_br(raw)
-
-    # Pagination
-    ALLOWED_PER_PAGE = [10, 25, 50]
-    try:
-        per_page = int(request.args.get('per_page', 10))
-    except (ValueError, TypeError):
-        per_page = 10
-    if per_page not in ALLOWED_PER_PAGE:
-        per_page = 10
-    
-    total_items = len(filtered_plans)
-    try:
-        page = max(1, int(request.args.get('page', 1)))
-    except (ValueError, TypeError):
-        page = 1
-    total_pages = max(1, (total_items + per_page - 1) // per_page)
-    page = min(page, total_pages)
-    paginated_plans = filtered_plans[(page - 1) * per_page : page * per_page]
 
     # Month names for template
     month_names = {
